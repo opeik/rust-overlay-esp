@@ -142,35 +142,42 @@
         # `nix fmt`
         formatter = pkgs.alejandra;
         # `nix develop`
-        devShells.default = pkgs.mkShell {
-          buildInputs = [
-            self.formatter.${system}
-            pkgs.nil
 
-            #self.packages.${system}.espup
-            self.packages.${system}.ldproxy
-            pkgs.cargo-espflash
-            pkgs.cargo-espmonitor
-            (pkgs.lib.optional pkgs.stdenv.isDarwin pkgs.libiconv)
-            pkgs.rustup
-            (pkgs.rust-bin.selectLatestNightlyWith (toolchain:
-              toolchain.minimal.override {
-                extensions = ["rust-src"];
-                targets = ["riscv32imc-unknown-none-elf" "riscv32imac-unknown-none-elf"];
-              }))
-          ];
-          shellHook = ''
-            unset CC CXX
-            export RUSTUP_HOME="$(pwd)/.rustup"
-            ln -fs ${self.packages.${system}.rust-bin-esp32} .rustup
+        devShells.default = let
+          rust-base = pkgs.rust-bin.selectLatestNightlyWith (toolchain:
+            toolchain.minimal.override {
+              extensions = ["rust-src"];
+              targets = ["riscv32imc-unknown-none-elf" "riscv32imac-unknown-none-elf"];
+            });
+        in
+          pkgs.mkShell {
+            buildInputs = [
+              self.formatter.${system}
+              pkgs.nil
 
-            export LIBCLANG_PATH="$(pwd)/.rustup/toolchains/esp/xtensa-esp32-elf-clang/esp-15.0.0-20221201/esp-clang/lib"
-            export PATH="$(pwd)/.rustup/toolchains/esp/xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp32s3-elf/bin:$PATH"
-            export PATH="$(pwd)/.rustup/toolchains/esp/riscv32-esp-elf/esp-12.2.0_20230208/riscv32-esp-elf/bin:$PATH"
-            export PATH="$(pwd)/.rustup/toolchains/esp/xtensa-esp32s2-elf/esp-12.2.0_20230208/xtensa-esp32s2-elf/bin:$PATH"
-            export PATH="$(pwd)/.rustup/toolchains/esp/xtensa-esp32-elf/esp-12.2.0_20230208/xtensa-esp32-elf/bin:$PATH"
-          '';
-        };
+              #self.packages.${system}.espup
+              self.packages.${system}.ldproxy
+              pkgs.cargo-espflash
+              pkgs.cargo-espmonitor
+              (pkgs.lib.optional pkgs.stdenv.isDarwin pkgs.libiconv)
+              pkgs.rustup
+              rust-base
+              pkgs.tree
+            ];
+            shellHook = ''
+              unset CC CXX
+              export RUSTUP_HOME="$(pwd)/.rustup"
+              ln --symbolic --force --no-dereference ${self.packages.${system}.rust-bin-esp32} .rustup
+
+              echo ${rust-base}
+
+              export LIBCLANG_PATH="$(pwd)/.rustup/toolchains/esp/xtensa-esp32-elf-clang/esp-15.0.0-20221201/esp-clang/lib"
+              export PATH="$(pwd)/.rustup/toolchains/esp/xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp32s3-elf/bin:$PATH"
+              export PATH="$(pwd)/.rustup/toolchains/esp/riscv32-esp-elf/esp-12.2.0_20230208/riscv32-esp-elf/bin:$PATH"
+              export PATH="$(pwd)/.rustup/toolchains/esp/xtensa-esp32s2-elf/esp-12.2.0_20230208/xtensa-esp32s2-elf/bin:$PATH"
+              export PATH="$(pwd)/.rustup/toolchains/esp/xtensa-esp32-elf/esp-12.2.0_20230208/xtensa-esp32-elf/bin:$PATH"
+            '';
+          };
       }
     );
 }
