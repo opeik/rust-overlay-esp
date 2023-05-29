@@ -1,22 +1,5 @@
 {
   "nodes": {
-    "embuild-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1683562792,
-        "narHash": "sha256-JSX30dA2ELJ09KulY7H/Dhw3cL7V3W9+Kc64WyH1EEg=",
-        "owner": "esp-rs",
-        "repo": "embuild",
-        "rev": "2ec3bbc91cd3a4fda54e02c9f1bc6dc350a957b2",
-        "type": "github"
-      },
-      "original": {
-        "owner": "esp-rs",
-        "ref": "v0.31.2",
-        "repo": "embuild",
-        "type": "github"
-      }
-    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -53,7 +36,6 @@
     },
     "root": {
       "inputs": {
-        "embuild-src": "embuild-src",
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs",
         "rust-overlay": "rust-overlay"
