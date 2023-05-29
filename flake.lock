@@ -17,23 +17,6 @@
         "type": "github"
       }
     },
-    "espup-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1684401006,
-        "narHash": "sha256-gzM+RT4Rt+LaYk7CwYUTIMci8DDI0y3+7y+N2yKRDOc=",
-        "owner": "esp-rs",
-        "repo": "espup",
-        "rev": "ae578449b3836c97a3b98967bc3e8055b91eaa23",
-        "type": "github"
-      },
-      "original": {
-        "owner": "esp-rs",
-        "ref": "v0.4.1",
-        "repo": "espup",
-        "type": "github"
-      }
-    },
     "flake-utils": {
       "inputs": {
         "systems": "systems"
@@ -71,7 +54,6 @@
     "root": {
       "inputs": {
         "embuild-src": "embuild-src",
-        "espup-src": "espup-src",
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs",
         "rust-overlay": "rust-overlay"
