@@ -2,4 +2,7 @@
 /.embuild
 /target
 /Cargo.lock
-/.rustup/**
+/.rustup
+/.direnv
+/rustup-bk
+/result
