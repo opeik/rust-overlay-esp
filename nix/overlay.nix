@@ -13,44 +13,53 @@ in {
         };
       })
       (builtins.attrNames manifests.${system}));
-  in {
-    rust-bin-esp32 = pkgs.stdenv.mkDerivation {
+  in
+    pkgs.stdenv.mkDerivation {
       pname = "rust-bin-esp32";
       version = "1.69.0.0";
       dontUnpack = true;
+      buildInputs = [pkgs.makeWrapper];
       buildPhase = ''
-        mkdir --parents $out tmp/{rust,rust-src} esp/{\
+        mkdir --parents rust rust-src esp/{\
         xtensa-esp32-elf-clang/esp-15.0.0-20221201,\
         xtensa-esp32s2-elf/esp-12.2.0_20230208,\
         xtensa-esp32-elf/esp-12.2.0_20230208,\
         xtensa-esp32s3-elf/esp-12.2.0_20230208,\
         riscv32-esp-elf/esp-12.2.0_20230208}
 
-        tar --extract --file ${bins.rust-esp} --directory tmp/rust
-        tar --extract --file ${bins.rust-esp-src} --directory tmp/rust-src
+        tar --extract --file ${bins.rust-esp} --directory rust
+        tar --extract --file ${bins.rust-esp-src} --directory rust-src
         tar --extract --file ${bins.llvm-esp} --directory esp/xtensa-esp32-elf-clang/esp-15.0.0-20221201
         tar --extract --file ${bins.xtensa-esp32-elf} --directory esp/xtensa-esp32-elf/esp-12.2.0_20230208
         tar --extract --file ${bins.xtensa-esp32s2-elf} --directory esp/xtensa-esp32s2-elf/esp-12.2.0_20230208
         tar --extract --file ${bins.xtensa-esp32s3-elf} --directory esp/xtensa-esp32s3-elf/esp-12.2.0_20230208
         tar --extract --file ${bins.riscv32-esp-elf} --directory esp/riscv32-esp-elf/esp-12.2.0_20230208
 
-        ./tmp/rust/rust-nightly-aarch64-apple-darwin/install.sh --destdir=esp \
+        ./rust/rust-nightly-aarch64-apple-darwin/install.sh --destdir=esp \
           --prefix="" --without=rust-docs-json-preview,rust-docs --disable-ldconfig
-        ./tmp/rust-src/rust-src-nightly/install.sh --destdir=esp --prefix="" --disable-ldconfig
+        ./rust-src/rust-src-nightly/install.sh --destdir=esp --prefix="" --disable-ldconfig
+      '';
+
+      installPhase = ''
+        mkdir --parents $out/bin
         mv esp $out
 
-        cat << 'EOF' > $out/env.sh
-        export LIBCLANG_PATH="$out/esp/xtensa-esp32-elf-clang/esp-15.0.0-20221201/esp-clang/lib"
-        export PATH="$out/esp/bin:$PATH"
-        export PATH="$out/esp/xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp32s3-elf/bin:$PATH"
-        export PATH="$out/esp/riscv32-esp-elf/esp-12.2.0_20230208/riscv32-esp-elf/bin:$PATH"
-        export PATH="$out/esp/xtensa-esp32s2-elf/esp-12.2.0_20230208/xtensa-esp32s2-elf/bin:$PATH"
-        export PATH="$out/esp/xtensa-esp32-elf/esp-12.2.0_20230208/xtensa-esp32-elf/bin:$PATH"
-        EOF
-        substituteInPlace $out/env.sh --replace '$out' "$out"
+        ln --symbolic $out/esp/{\
+        xtensa-esp32-elf/esp-12.2.0_20230208/xtensa-esp32-elf/bin/*,\
+        xtensa-esp32s2-elf/esp-12.2.0_20230208/xtensa-esp32s2-elf/bin/*,\
+        xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp32s3-elf/bin/*,\
+        riscv32-esp-elf/esp-12.2.0_20230208/riscv32-esp-elf/bin/*} $out/bin
+
+        # See: https://github.com/ivmarkov/rust-esp32-std-demo/issues/129
+        for file in $out/esp/bin/*; do
+          wrapProgram $file \
+            --unset CC \
+            --unset CXX \
+            --set LIBCLANG_PATH "$out/esp/xtensa-esp32-elf-clang/esp-15.0.0-20221201/esp-clang/lib"
+          ln --symbolic $file $out/bin
+        done
       '';
     };
-  };
 
   ldproxy = pkgs.rustPlatform.buildRustPackage {
     pname = "ldproxy";

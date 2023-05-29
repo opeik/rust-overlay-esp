@@ -28,22 +28,19 @@
         formatter = pkgs.alejandra;
 
         # `nix develop`
-        devShells.default = let
-          nix-tools = with pkgs; [nil self.formatter.${system}];
-          rust-tools = with pkgs; [
-            #rust-bin-esp32
-            pkgs.ldproxy
+        devShells.default = pkgs.mkShell {
+          buildInputs = with pkgs; [
+            # Nix toolchain
+            nil
+            self.formatter.${system}
+            # Rust toolchain
+            rust-bin-esp32
+            ldproxy
             cargo-espflash
             cargo-espmonitor
             (lib.optional stdenv.isDarwin libiconv)
           ];
-        in
-          pkgs.mkShell {
-            buildInputs = [nix-tools rust-tools];
-            shellHook = with pkgs; ''
-              unset CC CXX
-            '';
-          };
+        };
       }
     );
 }
