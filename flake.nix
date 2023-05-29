@@ -6,6 +6,7 @@
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
     };
     espup-src = {
       flake = false;
@@ -55,7 +56,7 @@
             cargoHash = "sha256-2W5kKM0VV4C/L9dPxf4NDmi6VSleWvT27CfQbYCxo2U=";
           };
 
-          rust-esp32 = let
+          rust-bin-esp32 = let
             rust-base = pkgs.rust-bin.selectLatestNightlyWith (toolchain:
               toolchain.minimal.override {
                 extensions = ["rust-src"];
@@ -104,31 +105,35 @@
               buildPhase = ''
                 set -x
 
-                mkdir --parents rust rust-src toolchains/esp
-                cd toolchains/esp
+                mkdir --parents $out rust rust-src rustup/toolchains/esp
+                cd rustup/toolchains/esp
                 mkdir --parents \
                   xtensa-esp32-elf-clang/esp-15.0.0-20221201 \
                   xtensa-esp32s2-elf/esp-12.2.0_20230208 \
                   xtensa-esp32-elf/esp-12.2.0_20230208 \
                   xtensa-esp32s3-elf/esp-12.2.0_20230208 \
                   riscv32-esp-elf/esp-12.2.0_20230208
-                cd ../..
-
-                tar -xf ${llvm-esp} -C toolchains/esp/xtensa-esp32-elf-clang/esp-15.0.0-20221201
-                tar -xf ${xtensa-esp32-elf} -C toolchains/esp/xtensa-esp32-elf/esp-12.2.0_20230208
-                tar -xf ${xtensa-esp32s2-elf} -C toolchains/esp/xtensa-esp32s2-elf/esp-12.2.0_20230208
-                tar -xf ${xtensa-esp32s3-elf} -C toolchains/esp/xtensa-esp32s3-elf/esp-12.2.0_20230208
-                tar -xf ${riscv32-esp-elf} -C toolchains/esp/riscv32-esp-elf/esp-12.2.0_20230208
+                cd ../../..
 
                 tar -xf ${rust-esp} -C rust
                 tar -xf ${rust-esp-src} -C rust-src
+                tar -xf ${llvm-esp} -C rustup/toolchains/esp/xtensa-esp32-elf-clang/esp-15.0.0-20221201
+                tar -xf ${xtensa-esp32-elf} -C rustup/toolchains/esp/xtensa-esp32-elf/esp-12.2.0_20230208
+                tar -xf ${xtensa-esp32s2-elf} -C rustup/toolchains/esp/xtensa-esp32s2-elf/esp-12.2.0_20230208
+                tar -xf ${xtensa-esp32s3-elf} -C rustup/toolchains/esp/xtensa-esp32s3-elf/esp-12.2.0_20230208
+                tar -xf ${riscv32-esp-elf} -C rustup/toolchains/esp/riscv32-esp-elf/esp-12.2.0_20230208
 
-                rust/rust-nightly-aarch64-apple-darwin/install.sh --destdir=toolchains/esp \
+                rust/rust-nightly-aarch64-apple-darwin/install.sh --destdir=rustup/toolchains/esp \
                   --prefix="" --without=rust-docs-json-preview,rust-docs --disable-ldconfig
-                rust-src/rust-src-nightly/install.sh --destdir=toolchains/esp --prefix="" --disable-ldconfig
+                rust-src/rust-src-nightly/install.sh --destdir=rustup/toolchains/esp --prefix="" --disable-ldconfig
 
-                mkdir --parents $out/rustup
-                mv toolchains $out/rustup
+                cat << EOF > rustup/settings.toml
+                  default_toolchain = "nightly-aarch64-apple-darwin"
+                  profile = "default"
+                  version = "12"
+                EOF
+
+                mv rustup/* $out
 
                 set +x
               '';
@@ -147,11 +152,23 @@
             pkgs.cargo-espflash
             pkgs.cargo-espmonitor
             (pkgs.lib.optional pkgs.stdenv.isDarwin pkgs.libiconv)
-            # pkgs.rustup
+            pkgs.rustup
+            (pkgs.rust-bin.selectLatestNightlyWith (toolchain:
+              toolchain.minimal.override {
+                extensions = ["rust-src"];
+                targets = ["riscv32imc-unknown-none-elf" "riscv32imac-unknown-none-elf"];
+              }))
           ];
           shellHook = ''
-            unset CC,CXX
+            unset CC CXX
             export RUSTUP_HOME="$(pwd)/.rustup"
+            ln -fs ${self.packages.${system}.rust-bin-esp32} .rustup
+
+            export LIBCLANG_PATH="$(pwd)/.rustup/toolchains/esp/xtensa-esp32-elf-clang/esp-15.0.0-20221201/esp-clang/lib"
+            export PATH="$(pwd)/.rustup/toolchains/esp/xtensa-esp32s3-elf/esp-12.2.0_20230208/xtensa-esp32s3-elf/bin:$PATH"
+            export PATH="$(pwd)/.rustup/toolchains/esp/riscv32-esp-elf/esp-12.2.0_20230208/riscv32-esp-elf/bin:$PATH"
+            export PATH="$(pwd)/.rustup/toolchains/esp/xtensa-esp32s2-elf/esp-12.2.0_20230208/xtensa-esp32s2-elf/bin:$PATH"
+            export PATH="$(pwd)/.rustup/toolchains/esp/xtensa-esp32-elf/esp-12.2.0_20230208/xtensa-esp32-elf/bin:$PATH"
           '';
         };
       }
