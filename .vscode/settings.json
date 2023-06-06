@@ -1,0 +1,18 @@
+{
+    // Nix settings.
+    "nix.enableLanguageServer": true,
+    "nix.serverPath": "nil",
+    "nix.serverSettings": {
+        "nil": {
+            "formatting": {
+                "command": [
+                    "alejandra"
+                ]
+            }
+        }
+    },
+
+    // rust-analyzer's proc macro support is busted on the esp toolchain for the forseeable future,
+    // see: https://github.com/esp-rs/espup/issues/254
+    "rust-analyzer.procMacro.enable": false
+}

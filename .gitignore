@@ -1,8 +1,2 @@
-/.vscode
-/.embuild
-/target
-/Cargo.lock
-/.rustup
 /.direnv
-/rustup-bk
-/result
+/tools/target

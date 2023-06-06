@@ -2,7 +2,7 @@ final: prev: let
   pkgs = final.pkgs;
   system = final.system;
 in {
-  rust-bin-esp32 = let
+  rust-bin-esp = let
     manifests = import ./manifests.nix;
     bins = builtins.listToAttrs (builtins.map
       (file: {
@@ -15,7 +15,7 @@ in {
       (builtins.attrNames manifests.${system}));
   in
     pkgs.stdenv.mkDerivation {
-      pname = "rust-bin-esp32";
+      pname = "rust-bin-esp";
       version = "1.69.0.0";
       dontUnpack = true;
       buildInputs = [pkgs.makeWrapper];
