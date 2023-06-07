@@ -1,0 +1,16 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "run tools",
+            "program": "${workspaceFolder}/tools/target/debug/tools",
+            "args": [],
+            "cwd": "${workspaceFolder}/tools",
+            "sourceMap": {},
+            "sourceLanguages": [
+                "rust"
+            ],
+        }
+    ]
+}
