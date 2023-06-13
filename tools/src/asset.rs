@@ -1,15 +1,64 @@
 use crate::{
-    github::{Release, ReleaseAsset},
+    github::{Asset, Release},
     nix::Target,
 };
 use color_eyre::{
     eyre::{eyre, ContextCompat},
     Result,
 };
+use data_encoding::HEXLOWER;
+use futures_util::StreamExt;
 use indoc::formatdoc;
 use lazy_regex::{regex, Lazy, Regex};
-use std::str::FromStr;
+use ring::digest::{Context, Digest, SHA256};
+use std::{path::Path, str::FromStr};
 use target_lexicon::{Architecture, OperatingSystem};
+use tokio::io::AsyncWriteExt;
+
+#[derive(Debug, Clone)]
+pub struct TargetAsset<'a> {
+    pub target: Target,
+    pub asset: &'a Asset,
+    pub name: &'a str,
+    pub version: &'a str,
+}
+
+impl<'a> TargetAsset<'a> {
+    pub fn to_nix(&self, digest: &Digest) -> Result<String> {
+        let name = self.name;
+        let version = self.version.replace('.', "_");
+        let url = self.asset.browser_download_url.as_str();
+        let sha256 = HEXLOWER.encode(digest.as_ref());
+
+        Ok(formatdoc! {
+        r#"
+            "{name}-{version}" = {{
+                url = "{url}",
+                sha256 = "{sha256}",
+            }}"#,
+          })
+    }
+
+    pub async fn download(&self, path: &impl AsRef<Path>) -> Result<Digest> {
+        let full_path = path.as_ref().join(self.asset.name.clone());
+        download_file(&self.asset.browser_download_url, &full_path).await
+    }
+}
+
+async fn download_file(url: &str, path: &impl AsRef<Path>) -> Result<Digest> {
+    let mut file = tokio::fs::File::create(path).await?;
+    let mut stream = reqwest::get(url).await?.bytes_stream();
+    let mut context = Context::new(&SHA256);
+
+    while let Some(chunk_result) = stream.next().await {
+        let chunk = chunk_result?;
+        file.write_all(&chunk).await?;
+        context.update(&chunk)
+    }
+
+    file.flush().await?;
+    Ok(context.finish())
+}
 
 macro_rules! capture_str {
     ($captures:ident, $name:expr) => {
@@ -68,18 +117,12 @@ pub fn filter_llvm_assets<'a>(release: &'a Release, target: &Target) -> Vec<Targ
                 "amd64" => "x86_64",
                 arch_str => arch_str,
             };
-            let arch = Architecture::from_str(arch_str)
-                .map_err(|_| eyre!("failed to parse architecture"))?;
-            let os_str = match captures
-                .name("os")
-                .wrap_err("failed to match operating system")?
-                .as_str()
-            {
+            let arch = Architecture::from_str(arch_str).map_err(|_| eyre!("invalid arch"))?;
+            let os_str = match captures.name("os").wrap_err("invalid os")?.as_str() {
                 "macos" => "darwin",
                 os_str => os_str,
             };
-            let os = OperatingSystem::from_str(os_str)
-                .map_err(|_| eyre!("failed to parse operating system"))?;
+            let os = OperatingSystem::from_str(os_str).map_err(|_| eyre!("invalid os"))?;
 
             Ok(TargetAsset {
                 target: Target { arch, os },
@@ -107,16 +150,11 @@ pub fn filter_esp_assets<'a>(release: &'a Release, target: &Target) -> Vec<Targe
             let captures = regex.captures(&asset.name).unwrap();
             let arch = Architecture::from_str(capture_str!(captures, "arch"))
                 .map_err(|_| eyre!("invalid arch"))?;
-            let os_str = match captures
-                .name("os")
-                .wrap_err("failed to match operating system")?
-                .as_str()
-            {
+            let os_str = match captures.name("os").wrap_err("invalid os")?.as_str() {
                 "apple" => "darwin",
                 os_str => os_str,
             };
-            let os = OperatingSystem::from_str(os_str)
-                .map_err(|_| eyre!("failed to parse operating system"))?;
+            let os = OperatingSystem::from_str(os_str).map_err(|_| eyre!("invalid os"))?;
             Ok(TargetAsset {
                 target: Target { arch, os },
                 asset,
@@ -127,27 +165,4 @@ pub fn filter_esp_assets<'a>(release: &'a Release, target: &Target) -> Vec<Targe
         .filter_map(|x: Result<TargetAsset>| x.ok())
         .filter(|x| x.target == *target)
         .collect::<Vec<_>>()
-}
-
-pub fn asset_to_nix(asset: &TargetAsset) -> String {
-    let name = "foo";
-    let url = asset.asset.browser_download_url.as_str();
-    // TODO: calculate the sha256 hash you dumbass
-    let sha256 = "";
-
-    formatdoc! {
-        r#"
-        {name} = {{
-            url = "{url}",
-            sha256 = "{sha256}",
-        }}"#,
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct TargetAsset<'a> {
-    pub target: Target,
-    pub asset: &'a ReleaseAsset,
-    pub name: &'a str,
-    pub version: &'a str,
 }

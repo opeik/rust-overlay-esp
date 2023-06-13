@@ -3,8 +3,8 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "run tools",
-            "program": "${workspaceFolder}/tools/target/debug/tools",
+            "name": "manifest_gen",
+            "program": "${workspaceFolder}/tools/target/debug/manifest_gen",
             "args": [],
             "cwd": "${workspaceFolder}/tools",
             "sourceMap": {},

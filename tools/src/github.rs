@@ -6,7 +6,7 @@ use std::collections::HashMap;
 /// A release.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Release {
-    pub assets: Vec<ReleaseAsset>,
+    pub assets: Vec<Asset>,
     pub assets_url: String,
     pub body: Option<String>,
     pub body_html: Option<String>,
@@ -26,7 +26,7 @@ pub struct Release {
 
 /// Data related to a release.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ReleaseAsset {
+pub struct Asset {
     pub browser_download_url: String,
     pub content_type: String,
     pub created_at: String,

@@ -33,7 +33,12 @@
             ldproxy
             cargo-espflash
             cargo-espmonitor
-            (lib.optional stdenv.isDarwin libiconv)
+            (
+              lib.optional stdenv.isDarwin [
+                libiconv
+                (with darwin.apple_sdk.frameworks; Security)
+              ]
+            )
           ];
         };
 
