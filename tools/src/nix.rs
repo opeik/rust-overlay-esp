@@ -1,9 +1,23 @@
 use target_lexicon::{Aarch64Architecture, Architecture, OperatingSystem};
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Target {
     pub arch: Architecture,
     pub os: OperatingSystem,
+}
+
+impl ToString for Target {
+    fn to_string(&self) -> String {
+        use targets::*;
+        match *self {
+            AARCH64_DARWIN => "aarch64-darwin",
+            X86_64_DARWIN => "x86_64-darwin",
+            AARCH64_LINUX => "aarch64-linux",
+            X86_64_LINUX => "x86_64-linux",
+            _ => unreachable!(),
+        }
+        .to_string()
+    }
 }
 
 pub mod targets {

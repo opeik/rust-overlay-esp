@@ -9,7 +9,7 @@ use color_eyre::{
 use data_encoding::HEXLOWER;
 use futures_util::StreamExt;
 use indoc::formatdoc;
-use lazy_regex::{regex, Lazy, Regex};
+use lazy_regex::{lazy_regex, Lazy, Regex};
 use ring::digest::{Context, Digest, SHA256};
 use std::{path::Path, str::FromStr};
 use target_lexicon::{Architecture, OperatingSystem};
@@ -26,16 +26,20 @@ pub struct TargetAsset<'a> {
 impl<'a> TargetAsset<'a> {
     pub fn to_nix(&self, digest: &Digest) -> Result<String> {
         let name = self.name;
+        let target = self.target.to_string();
         let version = self.version.replace('.', "_");
         let url = self.asset.browser_download_url.as_str();
         let sha256 = HEXLOWER.encode(digest.as_ref());
 
         Ok(formatdoc! {
         r#"
-            "{name}-{version}" = {{
-                url = "{url}",
-                sha256 = "{sha256}",
-            }}"#,
+            {target} = {{
+              {name}-{version} = {{
+                url = "{url}";
+                sha256 = "{sha256}";
+              }}
+            }}
+            "#,
           })
     }
 
@@ -69,12 +73,20 @@ macro_rules! capture_str {
     };
 }
 
+static RUST_ASSET_REGEX: Lazy<Regex> = lazy_regex!(
+    r"(?P<name>rust)-(?P<version>.+?)-(?P<arch>.+?)-(?P<vendor>.+?)-(?P<os>.+?)(-(?P<env>.+?))?\.(?P<ext>.+)"
+);
+
+static ESP_ASSET_REGEX: Lazy<Regex> = lazy_regex!(
+    r"(?P<name>.+)-(?P<version>.+?)-(?P<arch>.+?)-(?P<os>.+?)-(?P<env>.+?)\.(?P<ext>.+)"
+);
+
+static LLVM_ASSET_REGEX: Lazy<Regex> =
+    lazy_regex!(r"(?P<name>libs_llvm)-(?P<version>.+\d)-(?P<os>.+?)(-(?P<arch>.+?))?\.(?P<ext>.+)");
+
 /// Filters all Rust assets in a GitHub [`Release`] for the Nix [`Target`].
 pub fn filter_rust_assets<'a>(release: &'a Release, target: &Target) -> Vec<TargetAsset<'a>> {
-    let regex: &Lazy<Regex> = regex!(
-        r"(?P<name>rust)-(?P<version>.+?)-(?P<arch>.+?)-(?P<vendor>.+?)-(?P<os>.+?)(-(?P<env>.+?))?\.(?P<ext>.+)"
-    );
-
+    let regex = &RUST_ASSET_REGEX;
     release
         .assets
         .iter()
@@ -100,9 +112,7 @@ pub fn filter_rust_assets<'a>(release: &'a Release, target: &Target) -> Vec<Targ
 /// Filters all LLVM library assets in a GitHub [`Release`] for the Nix
 /// [`Target`].
 pub fn filter_llvm_assets<'a>(release: &'a Release, target: &Target) -> Vec<TargetAsset<'a>> {
-    let regex: &Lazy<Regex> =
-        regex!(r"(?P<name>libs_llvm)-(?P<version>.+\d)-(?P<os>.+?)(-(?P<arch>.+?))?\.(?P<ext>.+)");
-
+    let regex = &LLVM_ASSET_REGEX;
     release
         .assets
         .iter()
@@ -138,10 +148,7 @@ pub fn filter_llvm_assets<'a>(release: &'a Release, target: &Target) -> Vec<Targ
 
 /// Filters all ESP assets in a GitHub [`Release`] for the Nix [`Target`].
 pub fn filter_esp_assets<'a>(release: &'a Release, target: &Target) -> Vec<TargetAsset<'a>> {
-    let regex: &Lazy<Regex> = regex!(
-        r"(?P<name>.+)-(?P<version>.+?)-(?P<arch>.+?)-(?P<os>.+?)-(?P<env>.+?)\.(?P<ext>.+)"
-    );
-
+    let regex = &ESP_ASSET_REGEX;
     release
         .assets
         .iter()
@@ -165,4 +172,104 @@ pub fn filter_esp_assets<'a>(release: &'a Release, target: &Target) -> Vec<Targe
         .filter_map(|x: Result<TargetAsset>| x.ok())
         .filter(|x| x.target == *target)
         .collect::<Vec<_>>()
+}
+
+#[cfg(test)]
+mod test {
+    use std::collections::HashMap;
+
+    use maplit::hashmap;
+
+    use super::*;
+
+    fn regex_captures<'a>(regex: &'a Regex, s: &'a str) -> Result<HashMap<&'a str, &'a str>> {
+        let captures = regex.captures(s).wrap_err(eyre!("no captures found"))?;
+        Ok(regex
+            .capture_names()
+            .flatten()
+            .filter_map(|n| Some((n, captures.name(n)?.as_str())))
+            .collect::<HashMap<&'a str, &'a str>>())
+    }
+
+    #[test]
+    fn test_rust_regex() -> Result<()> {
+        let regex = &RUST_ASSET_REGEX;
+        assert_eq!(
+            regex_captures(regex, "rust-1.70.0.1-aarch64-apple-darwin.tar.xz")?,
+            hashmap! {
+                "name" => "rust",
+                "version" => "1.70.0.1",
+                "arch" => "aarch64",
+                "vendor" => "apple",
+                "os" => "darwin",
+                "ext" => "tar.xz",
+            }
+        );
+
+        assert_eq!(
+            regex_captures(regex, "rust-1.70.0.1-x86_64-apple-darwin.tar.xz")?,
+            hashmap! {
+                "name" => "rust",
+                "version" => "1.70.0.1",
+                "arch" => "x86_64",
+                "vendor" => "apple",
+                "os" => "darwin",
+                "ext" => "tar.xz",
+            }
+        );
+
+        assert_eq!(
+            regex_captures(regex, "rust-1.70.0.1-aarch64-unknown-linux-gnu.tar.xz")?,
+            hashmap! {
+                "name" => "rust",
+                "version" => "1.70.0.1",
+                "arch" => "aarch64",
+                "vendor" => "unknown",
+                "os" => "linux",
+                "env" => "gnu",
+                "ext" => "tar.xz",
+            }
+        );
+
+        assert_eq!(
+            regex_captures(regex, "rust-1.70.0.1-x86_64-unknown-linux-gnu.tar.xz")?,
+            hashmap! {
+                "name" => "rust",
+                "version" => "1.70.0.1",
+                "arch" => "x86_64",
+                "vendor" => "unknown",
+                "os" => "linux",
+                "env" => "gnu",
+                "ext" => "tar.xz",
+            }
+        );
+
+        assert_eq!(
+            regex_captures(regex, "rust-1.70.0.1-x86_64-pc-windows-gnu.zip")?,
+            hashmap! {
+                "name" => "rust",
+                "version" => "1.70.0.1",
+                "arch" => "x86_64",
+                "vendor" => "pc",
+                "os" => "windows",
+                "env" => "gnu",
+                "ext" => "zip",
+            }
+        );
+
+        assert_eq!(
+            regex_captures(regex, "rust-1.70.0.1-x86_64-pc-windows-msvc.zip")?,
+            hashmap! {
+                "name" => "rust",
+                "version" => "1.70.0.1",
+                "arch" => "x86_64",
+                "vendor" => "pc",
+                "os" => "windows",
+                "env" => "msvc",
+                "ext" => "zip",
+            }
+        );
+
+        Ok(())
+    }
 }
