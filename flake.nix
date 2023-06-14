@@ -28,7 +28,7 @@
         formatter = pkgs.alejandra;
 
         # `nix develop`
-        devShells.default = pkgs.mkShell {
+        devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
             # Nix toolchain
             self.formatter.${system}
