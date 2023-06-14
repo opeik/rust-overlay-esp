@@ -14,6 +14,6 @@ jobs:
     - name: Fetch Rust cache
       uses: Swatinem/rust-cache@v2
     - name: Run `cargo test`
-      run: nix develop --command cargo test --manifest-path tools/Cargo.toml
+      run: nix develop --command cargo test
     - name: Run `nix fmt`
       run: nix fmt -- *.nix --check

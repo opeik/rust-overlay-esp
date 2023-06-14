@@ -13,7 +13,7 @@ jobs:
     - name: Fetch Rust cache
       uses: Swatinem/rust-cache@v2
     - name: Generate manifests
-      run: nix develop --command cargo run --manifest-path tools/Cargo.toml -- --output-path manifests.nix
+      run: nix develop --command cargo run -- --output-path manifests.nix
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
         commit_message: Update package manifests
