@@ -1,14 +1,14 @@
 # `rust-overlay-esp`
 
+TODO
+
 <!-- [![CI](https://github.com/opeik/rust-overlay-esp/workflows/CI/badge.svg)](https://github.com/{{gh-username}}/{{project-name}}/actions) -->
 
 ## Installation
 
 ### Nix
 
-- Install the rust toolchain in order to have cargo installed by following
-  [this](https://www.rust-lang.org/tools/install) guide.
-- run `cargo install {{project-name}}`
+TODO
 
 ## License
 

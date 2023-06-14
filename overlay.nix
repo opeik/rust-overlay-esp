@@ -3,7 +3,7 @@ final: prev: let
   system = final.system;
 in {
   rust-bin-esp = let
-    manifests = import ./manifest.nix;
+    manifests = import ./manifests.nix;
 
     srcs = let
       assets = manifests.latest.src;
