@@ -6,7 +6,6 @@ on:
 
 jobs:
   tests:
-    name: Build
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -18,8 +17,3 @@ jobs:
       run: nix develop --command cargo test --manifest-path tools/Cargo.toml
     - name: Run `nix fmt`
       run: nix fmt -- *.nix --check
-
-  # update-manifests:
-  #   name: Build
-  #   runs-on: ubuntu-latest
-  #   steps:
