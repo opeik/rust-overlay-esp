@@ -3,20 +3,25 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
+    };
   };
 
   outputs = {
     self,
     nixpkgs,
     flake-utils,
+    rust-overlay,
     ...
   }:
-    flake-utils.lib.eachSystem ["x86_64-linux" "aarch64-darwin"] (
+    flake-utils.lib.eachSystem ["aarch64-darwin" "x86_64-darwin" "aarch64-linux" "x86_64-darwin"] (
       system: let
-        overlay = import ./overlay.nix;
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [overlay];
+          overlays = [(import ./overlay.nix) (import rust-overlay)];
         };
       in {
         # `nix fmt`
@@ -29,10 +34,7 @@
             self.formatter.${system}
             nil
             # Rust toolchain
-            rust-bin-esp
-            ldproxy
-            cargo-espflash
-            cargo-espmonitor
+            rust-bin.stable.latest.default
             (
               lib.optional stdenv.isDarwin [
                 libiconv
@@ -43,6 +45,7 @@
         };
 
         packages = {
+          default = self.packages.${system}.rust-bin-esp;
           rust-bin-esp = pkgs.rust-bin-esp;
           ldproxy = pkgs.ldproxy;
         };

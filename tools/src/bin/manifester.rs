@@ -1,9 +1,10 @@
 use std::{
     fs::File,
     io::{BufWriter, Write},
-    path::Path,
+    path::PathBuf,
 };
 
+use clap::Parser;
 use color_eyre::Result;
 use futures_util::{stream, StreamExt};
 use par_stream::prelude::*;
@@ -20,6 +21,7 @@ async fn main() -> Result<()> {
     let stdout_layer = tracing_subscriber::fmt::layer().with_filter(env_filter);
     tracing_subscriber::registry().with(stdout_layer).init();
 
+    let args = Args::parse();
     let client = github::new_client()?;
     let targets = [AARCH64_DARWIN, AARCH64_LINUX, X86_64_DARWIN, X86_64_LINUX];
 
@@ -62,10 +64,10 @@ async fn main() -> Result<()> {
         .collect::<Vec<_>>()
         .await;
 
-    let output_path = Path::new("manifest.nix");
-    let mut manifest = BufWriter::new(File::create(output_path)?);
+    let output_path = args.output_path;
+    let mut manifest = BufWriter::new(File::create(output_path.as_path())?);
 
-    writeln!(manifest, "{{")?;
+    writeln!(manifest, "rec {{")?;
     for result in results {
         let (digest, target_asset) = result;
         let nix_code = target_asset.to_nix_src(&digest?)?;
@@ -75,4 +77,12 @@ async fn main() -> Result<()> {
 
     info!("wrote manifest to `{}`", output_path.to_string_lossy());
     Ok(())
+}
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Output Nix manifest path.
+    #[arg(short, long, default_value = "./manifest.nix")]
+    output_path: PathBuf,
 }

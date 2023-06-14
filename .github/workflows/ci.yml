@@ -1,0 +1,18 @@
+on:
+  # schedule:
+  #   - cron: "* * * * SUN"
+  pull_request:
+  push: { branches: [main] }
+
+jobs:
+  lints:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Nix
+      uses: DeterminateSystems/nix-installer-action@main
+    - name: Run `cargo test`
+      run: nix develop --command cargo test --manifest-path tools/Cargo.toml
+    - name: Run `nix fmt`
+      run: nix fmt -- *.nix --check

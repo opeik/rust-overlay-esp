@@ -32,18 +32,19 @@ impl NixAsset {
 
         let src = match target {
             Some(target) => formatdoc! {r#"
-                {target} = {{
-                  {name}-{version} = {{
-                    url = "{url}";
-                    sha256 = "{sha256}";
-                  }};
-                }};
-            "#},
-            None => formatdoc! {r#"
-                {name}-{version} = {{
+                bin.{target}.{name}-{version} = {{
                   url = "{url}";
                   sha256 = "{sha256}";
                 }};
+                latest.bin.{target}.{name} = bin.{target}.{name}-{version};
+            "#},
+            // No target implies it's a source asset.
+            None => formatdoc! {r#"
+                src.{name}-{version} = {{
+                  url = "{url}";
+                  sha256 = "{sha256}";
+                }};
+                latest.src.{name} = src.{name}-{version};
             "#},
         };
 
