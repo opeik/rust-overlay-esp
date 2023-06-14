@@ -9,9 +9,5 @@
       }
     }
   },
-
-  // rust-analyzer's proc macro support is busted on the esp toolchain for the forseeable future,
-  // see: https://github.com/esp-rs/espup/issues/254
-  "rust-analyzer.procMacro.enable": false,
-  "cSpell.words": ["AARCH"]
+  "cSpell.words": ["aarch"]
 }

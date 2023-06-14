@@ -1,14 +1,10 @@
 # `rust-overlay-esp`
 
-TODO
+[![.github/workflows/ci.yml](https://github.com/opeik/rust-overlay-esp/actions/workflows/ci.yml/badge.svg)](https://github.com/opeik/rust-overlay-esp/actions/workflows/ci.yml)
 
-<!-- [![CI](https://github.com/opeik/rust-overlay-esp/workflows/CI/badge.svg)](https://github.com/{{gh-username}}/{{project-name}}/actions) -->
+## Usage
 
-## Installation
-
-### Nix
-
-TODO
+`nix shell github:opeik/rust-overlay-esp` then cry and buy an RP2040 or something.
 
 ## License
 
