@@ -11,56 +11,59 @@ use futures_util::StreamExt;
 use indoc::formatdoc;
 use lazy_regex::{lazy_regex, Lazy, Regex};
 use ring::digest::{Context, Digest, SHA256};
-use std::{path::Path, str::FromStr};
+use std::str::FromStr;
 use target_lexicon::{Architecture, OperatingSystem};
-use tokio::io::AsyncWriteExt;
 
 #[derive(Debug, Clone)]
-pub struct TargetAsset<'a> {
-    pub target: Target,
-    pub asset: &'a Asset,
-    pub name: &'a str,
-    pub version: &'a str,
+pub struct NixAsset {
+    pub target: Option<Target>,
+    pub asset: Asset,
+    pub name: String,
+    pub version: String,
 }
 
-impl<'a> TargetAsset<'a> {
-    pub fn to_nix(&self, digest: &Digest) -> Result<String> {
-        let name = self.name;
-        let target = self.target.to_string();
+impl NixAsset {
+    pub fn to_nix_src(&self, digest: &Digest) -> Result<String> {
+        let target = self.target.map(|x| x.to_string());
+        let name = self.name.as_str();
         let version = self.version.replace('.', "_");
         let url = self.asset.browser_download_url.as_str();
         let sha256 = HEXLOWER.encode(digest.as_ref());
 
-        Ok(formatdoc! {
-        r#"
-            {target} = {{
-              {name}-{version} = {{
-                url = "{url}";
-                sha256 = "{sha256}";
-              }}
-            }}
-            "#,
-          })
+        let src = match target {
+            Some(target) => formatdoc! {r#"
+                {target} = {{
+                  {name}-{version} = {{
+                    url = "{url}";
+                    sha256 = "{sha256}";
+                  }};
+                }};
+            "#},
+            None => formatdoc! {r#"
+                {name}-{version} = {{
+                  url = "{url}";
+                  sha256 = "{sha256}";
+                }};
+            "#},
+        };
+
+        Ok(src)
     }
 
-    pub async fn download(&self, path: &impl AsRef<Path>) -> Result<Digest> {
-        let full_path = path.as_ref().join(self.asset.name.clone());
-        download_file(&self.asset.browser_download_url, &full_path).await
+    pub async fn fetch_digest(&self) -> Result<Digest> {
+        fetch_digest(&self.asset.browser_download_url).await
     }
 }
 
-async fn download_file(url: &str, path: &impl AsRef<Path>) -> Result<Digest> {
-    let mut file = tokio::fs::File::create(path).await?;
+async fn fetch_digest(url: &str) -> Result<Digest> {
     let mut stream = reqwest::get(url).await?.bytes_stream();
     let mut context = Context::new(&SHA256);
 
     while let Some(chunk_result) = stream.next().await {
         let chunk = chunk_result?;
-        file.write_all(&chunk).await?;
         context.update(&chunk)
     }
 
-    file.flush().await?;
     Ok(context.finish())
 }
 
@@ -73,9 +76,18 @@ macro_rules! capture_str {
     };
 }
 
+macro_rules! capture_string {
+    ($captures:ident, $name:expr) => {
+        capture_str!($captures, $name).to_string()
+    };
+}
+
 static RUST_ASSET_REGEX: Lazy<Regex> = lazy_regex!(
     r"(?P<name>rust)-(?P<version>.+?)-(?P<arch>.+?)-(?P<vendor>.+?)-(?P<os>.+?)(-(?P<env>.+?))?\.(?P<ext>.+)"
 );
+
+static RUST_SRC_ASSET_REGEX: Lazy<Regex> =
+    lazy_regex!(r"(?P<name>rust-src)-(?P<version>.*\d)\.(?P<ext>.+)");
 
 static ESP_ASSET_REGEX: Lazy<Regex> = lazy_regex!(
     r"(?P<name>.+)-(?P<version>.+?)-(?P<arch>.+?)-(?P<os>.+?)-(?P<env>.+?)\.(?P<ext>.+)"
@@ -85,7 +97,7 @@ static LLVM_ASSET_REGEX: Lazy<Regex> =
     lazy_regex!(r"(?P<name>libs_llvm)-(?P<version>.+\d)-(?P<os>.+?)(-(?P<arch>.+?))?\.(?P<ext>.+)");
 
 /// Filters all Rust assets in a GitHub [`Release`] for the Nix [`Target`].
-pub fn filter_rust_assets<'a>(release: &'a Release, target: &Target) -> Vec<TargetAsset<'a>> {
+pub fn filter_rust_assets(release: &Release, target: &Target) -> Vec<NixAsset> {
     let regex = &RUST_ASSET_REGEX;
     release
         .assets
@@ -97,21 +109,42 @@ pub fn filter_rust_assets<'a>(release: &'a Release, target: &Target) -> Vec<Targ
                 .map_err(|_| eyre!("invalid arch"))?;
             let os = OperatingSystem::from_str(capture_str!(captures, "os"))
                 .map_err(|_| eyre!("invalid os"))?;
-            Ok(TargetAsset {
-                target: Target { arch, os },
-                asset,
-                name: capture_str!(captures, "name"),
-                version: capture_str!(captures, "version"),
+            Ok(NixAsset {
+                target: Some(Target { arch, os }),
+                asset: asset.clone(),
+                name: capture_string!(captures, "name"),
+                version: capture_string!(captures, "version"),
             })
         })
-        .filter_map(|x: Result<TargetAsset>| x.ok())
-        .filter(|x| x.target == *target)
+        .filter_map(|x: Result<NixAsset>| x.ok())
+        .filter(|x| x.target == Some(*target))
+        .collect::<Vec<_>>()
+}
+
+/// Filters all Rust source assets in a GitHub [`Release`] for the Nix
+/// [`Target`].
+pub fn filter_rust_src_assets(release: &Release) -> Vec<NixAsset> {
+    let regex = &RUST_SRC_ASSET_REGEX;
+    release
+        .assets
+        .iter()
+        .filter(|asset| regex.is_match(&asset.name))
+        .map(|asset| {
+            let captures = regex.captures(&asset.name).unwrap();
+            Ok(NixAsset {
+                target: None,
+                asset: asset.clone(),
+                name: capture_string!(captures, "name"),
+                version: capture_string!(captures, "version"),
+            })
+        })
+        .filter_map(|x: Result<NixAsset>| x.ok())
         .collect::<Vec<_>>()
 }
 
 /// Filters all LLVM library assets in a GitHub [`Release`] for the Nix
 /// [`Target`].
-pub fn filter_llvm_assets<'a>(release: &'a Release, target: &Target) -> Vec<TargetAsset<'a>> {
+pub fn filter_llvm_assets(release: &Release, target: &Target) -> Vec<NixAsset> {
     let regex = &LLVM_ASSET_REGEX;
     release
         .assets
@@ -134,20 +167,20 @@ pub fn filter_llvm_assets<'a>(release: &'a Release, target: &Target) -> Vec<Targ
             };
             let os = OperatingSystem::from_str(os_str).map_err(|_| eyre!("invalid os"))?;
 
-            Ok(TargetAsset {
-                target: Target { arch, os },
-                asset,
-                name: capture_str!(captures, "name"),
-                version: capture_str!(captures, "version"),
+            Ok(NixAsset {
+                target: Some(Target { arch, os }),
+                asset: asset.clone(),
+                name: capture_string!(captures, "name"),
+                version: capture_string!(captures, "version"),
             })
         })
-        .filter_map(|x: Result<TargetAsset>| x.ok())
-        .filter(|x| x.target == *target)
+        .filter_map(|x: Result<NixAsset>| x.ok())
+        .filter(|x| x.target == Some(*target))
         .collect::<Vec<_>>()
 }
 
 /// Filters all ESP assets in a GitHub [`Release`] for the Nix [`Target`].
-pub fn filter_esp_assets<'a>(release: &'a Release, target: &Target) -> Vec<TargetAsset<'a>> {
+pub fn filter_esp_assets(release: &Release, target: &Target) -> Vec<NixAsset> {
     let regex = &ESP_ASSET_REGEX;
     release
         .assets
@@ -162,41 +195,39 @@ pub fn filter_esp_assets<'a>(release: &'a Release, target: &Target) -> Vec<Targe
                 os_str => os_str,
             };
             let os = OperatingSystem::from_str(os_str).map_err(|_| eyre!("invalid os"))?;
-            Ok(TargetAsset {
-                target: Target { arch, os },
-                asset,
-                name: capture_str!(captures, "name"),
-                version: capture_str!(captures, "version"),
+            Ok(NixAsset {
+                target: Some(Target { arch, os }),
+                asset: asset.clone(),
+                name: capture_string!(captures, "name"),
+                version: capture_string!(captures, "version"),
             })
         })
-        .filter_map(|x: Result<TargetAsset>| x.ok())
-        .filter(|x| x.target == *target)
+        .filter_map(|x: Result<NixAsset>| x.ok())
+        .filter(|x| x.target == Some(*target))
         .collect::<Vec<_>>()
 }
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
-
-    use maplit::hashmap;
-
     use super::*;
+    use maplit::btreemap;
+    use std::collections::BTreeMap;
 
-    fn regex_captures<'a>(regex: &'a Regex, s: &'a str) -> Result<HashMap<&'a str, &'a str>> {
+    fn regex_captures<'a>(regex: &'a Regex, s: &'a str) -> Result<BTreeMap<&'a str, &'a str>> {
         let captures = regex.captures(s).wrap_err(eyre!("no captures found"))?;
         Ok(regex
             .capture_names()
             .flatten()
             .filter_map(|n| Some((n, captures.name(n)?.as_str())))
-            .collect::<HashMap<&'a str, &'a str>>())
+            .collect::<BTreeMap<&'a str, &'a str>>())
     }
 
     #[test]
-    fn test_rust_regex() -> Result<()> {
+    fn rust_regex() -> Result<()> {
         let regex = &RUST_ASSET_REGEX;
         assert_eq!(
             regex_captures(regex, "rust-1.70.0.1-aarch64-apple-darwin.tar.xz")?,
-            hashmap! {
+            btreemap! {
                 "name" => "rust",
                 "version" => "1.70.0.1",
                 "arch" => "aarch64",
@@ -208,7 +239,7 @@ mod test {
 
         assert_eq!(
             regex_captures(regex, "rust-1.70.0.1-x86_64-apple-darwin.tar.xz")?,
-            hashmap! {
+            btreemap! {
                 "name" => "rust",
                 "version" => "1.70.0.1",
                 "arch" => "x86_64",
@@ -220,7 +251,7 @@ mod test {
 
         assert_eq!(
             regex_captures(regex, "rust-1.70.0.1-aarch64-unknown-linux-gnu.tar.xz")?,
-            hashmap! {
+            btreemap! {
                 "name" => "rust",
                 "version" => "1.70.0.1",
                 "arch" => "aarch64",
@@ -233,7 +264,7 @@ mod test {
 
         assert_eq!(
             regex_captures(regex, "rust-1.70.0.1-x86_64-unknown-linux-gnu.tar.xz")?,
-            hashmap! {
+            btreemap! {
                 "name" => "rust",
                 "version" => "1.70.0.1",
                 "arch" => "x86_64",
@@ -244,29 +275,134 @@ mod test {
             }
         );
 
+        Ok(())
+    }
+
+    #[test]
+    fn rust_src_regex() -> Result<()> {
+        let regex = &RUST_SRC_ASSET_REGEX;
         assert_eq!(
-            regex_captures(regex, "rust-1.70.0.1-x86_64-pc-windows-gnu.zip")?,
-            hashmap! {
-                "name" => "rust",
+            regex_captures(regex, "rust-src-1.70.0.1.tar.xz")?,
+            btreemap! {
+                "name" => "rust-src",
                 "version" => "1.70.0.1",
-                "arch" => "x86_64",
-                "vendor" => "pc",
-                "os" => "windows",
-                "env" => "gnu",
-                "ext" => "zip",
+                "ext" => "tar.xz",
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn llvm_regex() -> Result<()> {
+        let regex = &LLVM_ASSET_REGEX;
+
+        assert_eq!(
+            regex_captures(regex, "libs_llvm-esp-16.0.0-20230516-linux-arm64.tar.xz")?,
+            btreemap! {
+                "name" => "libs_llvm",
+                "version" => "esp-16.0.0-20230516",
+                "os" => "linux",
+                "arch" => "arm64",
+                "ext" => "tar.xz",
             }
         );
 
         assert_eq!(
-            regex_captures(regex, "rust-1.70.0.1-x86_64-pc-windows-msvc.zip")?,
-            hashmap! {
-                "name" => "rust",
-                "version" => "1.70.0.1",
+            regex_captures(regex, "libs_llvm-esp-16.0.0-20230516-linux-amd64.tar.xz")?,
+            btreemap! {
+                "name" => "libs_llvm",
+                "version" => "esp-16.0.0-20230516",
+                "os" => "linux",
+                "arch" => "amd64",
+                "ext" => "tar.xz",
+            }
+        );
+
+        assert_eq!(
+            regex_captures(regex, "libs_llvm-esp-16.0.0-20230516-macos-arm64.tar.xz")?,
+            btreemap! {
+                "name" => "libs_llvm",
+                "version" => "esp-16.0.0-20230516",
+                "os" => "macos",
+                "arch" => "arm64",
+                "ext" => "tar.xz",
+            }
+        );
+
+        assert_eq!(
+            regex_captures(regex, "libs_llvm-esp-16.0.0-20230516-macos.tar.xz")?,
+            btreemap! {
+                "name" => "libs_llvm",
+                "version" => "esp-16.0.0-20230516",
+                "os" => "macos",
+                "ext" => "tar.xz",
+            }
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn esp_regex() -> Result<()> {
+        let regex = &ESP_ASSET_REGEX;
+
+        assert_eq!(
+            regex_captures(
+                regex,
+                "riscv32-esp-elf-12.2.0_20230208-aarch64-apple-darwin.tar.xz"
+            )?,
+            btreemap! {
+                "name" => "riscv32-esp-elf",
+                "version" => "12.2.0_20230208",
+                "arch" => "aarch64",
+                "os" => "apple",
+                "env" => "darwin",
+                "ext" => "tar.xz",
+            }
+        );
+
+        assert_eq!(
+            regex_captures(
+                regex,
+                "riscv32-esp-elf-12.2.0_20230208-x86_64-apple-darwin.tar.xz"
+            )?,
+            btreemap! {
+                "name" => "riscv32-esp-elf",
+                "version" => "12.2.0_20230208",
                 "arch" => "x86_64",
-                "vendor" => "pc",
-                "os" => "windows",
-                "env" => "msvc",
-                "ext" => "zip",
+                "os" => "apple",
+                "env" => "darwin",
+                "ext" => "tar.xz",
+            }
+        );
+
+        assert_eq!(
+            regex_captures(
+                regex,
+                "riscv32-esp-elf-12.2.0_20230208-aarch64-linux-gnu.tar.xz"
+            )?,
+            btreemap! {
+                "name" => "riscv32-esp-elf",
+                "version" => "12.2.0_20230208",
+                "arch" => "aarch64",
+                "os" => "linux",
+                "env" => "gnu",
+                "ext" => "tar.xz",
+            }
+        );
+
+        assert_eq!(
+            regex_captures(
+                regex,
+                "riscv32-esp-elf-12.2.0_20230208-x86_64-linux-gnu.tar.xz"
+            )?,
+            btreemap! {
+                "name" => "riscv32-esp-elf",
+                "version" => "12.2.0_20230208",
+                "arch" => "x86_64",
+                "os" => "linux",
+                "env" => "gnu",
+                "ext" => "tar.xz",
             }
         );
 
