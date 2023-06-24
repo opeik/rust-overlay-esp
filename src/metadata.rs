@@ -147,7 +147,7 @@ impl Parse for LlvmRelease {
         let name = value.name.into_inner();
         let captures = regex
             .captures(&name)
-            .context("failed to parse rust release metadata")?;
+            .context("failed to parse llvm release metadata")?;
 
         let arch_str = match captures
             .name("arch")
@@ -182,7 +182,7 @@ impl Parse for EspRelease {
         let name = value.name.into_inner();
         let captures = regex
             .captures(&name)
-            .context("failed to parse rust release metadata")?;
+            .context("failed to parse esp release metadata")?;
 
         let os_str = match captures.name("os").wrap_err("invalid os")?.as_str() {
             "apple" => "darwin",
