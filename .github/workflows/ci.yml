@@ -1,19 +1,23 @@
 on:
-  # schedule:
-  #   - cron: "* * * * SUN"
   pull_request:
   push: { branches: [main] }
 
+name: ci
 jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Install Nix
-      uses: DeterminateSystems/nix-installer-action@main
-    - name: Fetch Rust cache
-      uses: Swatinem/rust-cache@v2
-    - name: Run `cargo test`
-      run: nix develop --command cargo test
-    - name: Run `nix fmt`
-      run: nix fmt -- *.nix --check
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Fetch Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run `cargo test`
+        run: nix develop --command cargo test
+
+      - name: Run `nix fmt`
+        run: nix fmt -- *.nix --check

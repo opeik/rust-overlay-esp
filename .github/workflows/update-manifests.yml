@@ -3,6 +3,7 @@ on:
     - "0 0 * * 1"
   workflow_dispatch:
 
+name: update-manifests
 jobs:
   update-manifests:
     runs-on: ubuntu-latest
