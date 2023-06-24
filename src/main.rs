@@ -1,3 +1,7 @@
+pub mod asset;
+pub mod github;
+pub mod nix;
+
 use std::{
     fs::File,
     io::{BufWriter, Write},
@@ -8,9 +12,10 @@ use clap::Parser;
 use color_eyre::Result;
 use futures_util::{stream, StreamExt};
 use par_stream::prelude::*;
-use tools::{asset, github, nix::targets::*};
 use tracing::{info, Level};
 use tracing_subscriber::{prelude::*, EnvFilter};
+
+use crate::nix::targets::*;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -51,10 +56,8 @@ async fn main() -> Result<()> {
         .inspect(|target_asset| info!("found esp asset: `{}`", target_asset.asset.name))
         .collect::<Vec<_>>();
 
-    let results = stream::iter(rust_src_assets)
-        .chain(stream::iter(rust_assets))
-        .chain(stream::iter(llvm_assets))
-        .chain(stream::iter(esp_assets))
+    let results = stream::iter([rust_src_assets, rust_assets, llvm_assets, esp_assets].into_iter())
+        .flat_map(stream::iter)
         .par_then(None, move |target_asset| async move {
             info!("starting download of `{}`...", target_asset.asset.name);
             let digest = target_asset.fetch_digest().await;

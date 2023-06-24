@@ -34,7 +34,7 @@
             self.formatter.${system}
             nil
             # Rust toolchain
-            rust-bin.stable.latest.default
+            (rust-bin.fromRustupToolchainFile ./rust-toolchain.toml)
             (
               lib.optional stdenv.isDarwin [
                 libiconv

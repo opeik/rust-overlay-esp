@@ -1,7 +1,5 @@
-use crate::{
-    github::{Asset, Release},
-    nix::Target,
-};
+use std::str::FromStr;
+
 use color_eyre::{
     eyre::{eyre, ContextCompat},
     Result,
@@ -11,8 +9,12 @@ use futures_util::StreamExt;
 use indoc::formatdoc;
 use lazy_regex::{lazy_regex, Lazy, Regex};
 use ring::digest::{Context, Digest, SHA256};
-use std::str::FromStr;
 use target_lexicon::{Architecture, OperatingSystem};
+
+use crate::{
+    github::{Asset, Release},
+    nix::Target,
+};
 
 #[derive(Debug, Clone)]
 pub struct NixAsset {
@@ -210,9 +212,11 @@ pub fn filter_esp_assets(release: &Release, target: &Target) -> Vec<NixAsset> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use maplit::btreemap;
     use std::collections::BTreeMap;
+
+    use maplit::btreemap;
+
+    use super::*;
 
     fn regex_captures<'a>(regex: &'a Regex, s: &'a str) -> Result<BTreeMap<&'a str, &'a str>> {
         let captures = regex.captures(s).wrap_err(eyre!("no captures found"))?;

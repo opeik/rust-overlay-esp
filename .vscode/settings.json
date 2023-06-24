@@ -5,9 +5,14 @@
   "nix.serverSettings": {
     "nil": {
       "formatting": {
-        "command": ["alejandra"]
+        "command": [
+          "alejandra"
+        ]
       }
     }
   },
-  "cSpell.words": ["aarch"]
+  "cSpell.words": [
+    "aarch"
+  ],
+  "rust-analyzer.server.path": "rust-analyzer"
 }
