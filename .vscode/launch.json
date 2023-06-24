@@ -3,10 +3,9 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "manifest_gen",
-            "program": "${workspaceFolder}/tools/target/debug/manifest_gen",
+            "name": "manifester",
+            "program": "${workspaceFolder}/target/debug/manifester",
             "args": [],
-            "cwd": "${workspaceFolder}/tools",
             "sourceMap": {},
             "sourceLanguages": [
                 "rust"

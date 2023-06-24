@@ -16,8 +16,11 @@ jobs:
       - name: Fetch Rust cache
         uses: Swatinem/rust-cache@v2
 
-      - name: Run `cargo test`
-        run: nix develop --command cargo test
+      - name: Check Rust code formatting
+        run: cargo fmt --check
 
-      - name: Run `nix fmt`
+      - name: Check Nix code formatting
         run: nix fmt -- *.nix --check
+
+      - name: Run tests
+        run: nix develop --command cargo test

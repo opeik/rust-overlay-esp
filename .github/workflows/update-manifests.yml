@@ -1,6 +1,6 @@
 on:
   schedule:
-    - "0 0 * * 1"
+    - cron: "0 0 * * 1"
   workflow_dispatch:
 
 name: update-manifests
@@ -8,14 +8,20 @@ jobs:
   update-manifests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
+
       - name: Fetch Rust cache
         uses: Swatinem/rust-cache@v2
+
       - name: Generate manifests
-        run: nix develop --command cargo run -- --output-path manifests.nix
-      - uses: stefanzweifel/git-auto-commit-action@v4
+        run: nix develop --command cargo run
+
+      - name: Commit manifests
+        uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: Update package manifests
           file_pattern: "manifest.nix"

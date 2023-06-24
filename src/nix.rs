@@ -1,4 +1,8 @@
+use color_eyre::{eyre::ContextCompat, Result};
+use indoc::formatdoc;
 use target_lexicon::{Aarch64Architecture, Architecture, OperatingSystem};
+
+use crate::asset::Asset;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Target {
@@ -14,7 +18,7 @@ impl ToString for Target {
             X86_64_DARWIN => "x86_64-darwin",
             AARCH64_LINUX => "aarch64-linux",
             X86_64_LINUX => "x86_64-linux",
-            _ => unreachable!(),
+            _ => panic!("invalid target"),
         }
         .to_string()
     }
@@ -46,4 +50,38 @@ pub mod targets {
         arch: Architecture::X86_64,
         os: OperatingSystem::Linux,
     };
+}
+
+impl Asset {
+    pub fn to_nix_src(&self) -> Result<String> {
+        let target = self.metadata.target.as_ref().map(|x| x.to_string());
+        let name = self.metadata.name.as_ref();
+        let version = self.metadata.version.as_ref().replace('.', "_");
+        let url = &self.metadata.url;
+        let sha256_digest = self
+            .sha256_digest
+            .as_ref()
+            .context("missing sha256_digest")?
+            .as_ref();
+
+        let src = match target {
+            Some(target) => formatdoc! {r#"
+                bin.{target}.{name}-{version} = {{
+                  url = "{url}";
+                  sha256 = "{sha256_digest}";
+                }};
+                latest.bin.{target}.{name} = bin.{target}.{name}-{version};
+            "#},
+            // No target implies it's a source asset.
+            None => formatdoc! {r#"
+                src.{name}-{version} = {{
+                  url = "{url}";
+                  sha256 = "{sha256_digest}";
+                }};
+                latest.src.{name} = src.{name}-{version};
+            "#},
+        };
+
+        Ok(src)
+    }
 }

@@ -2,7 +2,6 @@
 name = "manifester"
 version = "0.1.0"
 edition = "2021"
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -13,7 +12,7 @@ futures = "0.3"
 futures-util = "0.3"
 indoc = "2.0"
 lazy-regex = "2.5"
-par-stream = { version = "0.10", features = ["runtime-tokio"] }
+nutype = { version = "0.2.0", features = ["serde"] }
 reqwest = { version = "0.11", default-features = false, features = [
     "rustls-tls",
     "json",
@@ -26,8 +25,10 @@ target-lexicon = "0.12"
 textwrap = "0.16"
 tokio = { version = "1.28", features = ["full"] }
 tokio-stream = "0.1"
+toml = "0.7"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+url = { version = "2.4.0", features = ["serde"] }
 
 [dev-dependencies]
 maplit = "1.0"

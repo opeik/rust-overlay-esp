@@ -1,5 +1,9 @@
+#![feature(async_fn_in_trait)]
+#![feature(return_position_impl_trait_in_trait)]
+
 pub mod asset;
 pub mod github;
+pub mod metadata;
 pub mod nix;
 
 use std::{
@@ -10,12 +14,11 @@ use std::{
 
 use clap::Parser;
 use color_eyre::Result;
-use futures_util::{stream, StreamExt};
-use par_stream::prelude::*;
+use futures_util::StreamExt;
 use tracing::{info, Level};
 use tracing_subscriber::{prelude::*, EnvFilter};
 
-use crate::nix::targets::*;
+use crate::metadata::{EspRelease, LlvmRelease, RustRelease, RustSrcRelease};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -27,54 +30,24 @@ async fn main() -> Result<()> {
     tracing_subscriber::registry().with(stdout_layer).init();
 
     let args = Args::parse();
-    let client = github::new_client()?;
-    let targets = [AARCH64_DARWIN, AARCH64_LINUX, X86_64_DARWIN, X86_64_LINUX];
 
-    let rust_release = github::fetch_latest_release(&client, "esp-rs/rust-build").await?;
-    let llvm_release = github::fetch_latest_release(&client, "espressif/llvm-project").await?;
-    let esp_release = github::fetch_latest_release(&client, "espressif/crosstool-NG").await?;
-    let releases = [&rust_release, &llvm_release, &esp_release]
-        .iter()
-        .map(|release| release.html_url.clone())
-        .collect::<Vec<_>>();
-    info!("fetched latest releases: {releases:?}");
-
-    let rust_src_assets = asset::filter_rust_src_assets(&rust_release);
-    let rust_assets = targets
-        .iter()
-        .flat_map(|target| asset::filter_rust_assets(&rust_release, target))
-        .inspect(|target_asset| info!("found rust asset: `{}`", target_asset.asset.name))
-        .collect::<Vec<_>>();
-    let llvm_assets = targets
-        .iter()
-        .flat_map(|target| asset::filter_llvm_assets(&llvm_release, target))
-        .inspect(|target_asset| info!("found llvm asset: `{}`", target_asset.asset.name))
-        .collect::<Vec<_>>();
-    let esp_assets = targets
-        .iter()
-        .flat_map(|target| asset::filter_esp_assets(&esp_release, target))
-        .inspect(|target_asset| info!("found esp asset: `{}`", target_asset.asset.name))
-        .collect::<Vec<_>>();
-
-    let results = stream::iter([rust_src_assets, rust_assets, llvm_assets, esp_assets].into_iter())
-        .flat_map(stream::iter)
-        .par_then(None, move |target_asset| async move {
-            info!("starting download of `{}`...", target_asset.asset.name);
-            let digest = target_asset.fetch_digest().await;
-            info!("downloaded `{}`: {:?}", target_asset.asset.name, digest);
-            (digest, target_asset)
-        })
-        .collect::<Vec<_>>()
-        .await;
+    let rust_releases = metadata::fetch_bin::<RustRelease>("esp-rs/rust-build").await?;
+    let rust_src_releases = metadata::fetch_src::<RustSrcRelease>("esp-rs/rust-build").await?;
+    let llvm_releases = metadata::fetch_bin::<LlvmRelease>("espressif/llvm-project").await?;
+    let esp_releases = metadata::fetch_bin::<EspRelease>("espressif/crosstool-NG").await?;
+    let releases = rust_releases
+        .chain(rust_src_releases)
+        .chain(llvm_releases)
+        .chain(esp_releases);
+    let assets = asset::fetch(releases, 8).collect::<Vec<_>>().await;
 
     let output_path = args.output_path;
     let mut manifest = BufWriter::new(File::create(output_path.as_path())?);
 
     writeln!(manifest, "rec {{")?;
-    for result in results {
-        let (digest, target_asset) = result;
-        let nix_code = target_asset.to_nix_src(&digest?)?;
-        write!(manifest, "{}", textwrap::indent(nix_code.as_str(), "  "))?;
+    for asset in assets {
+        let nix_src = asset?.to_nix_src()?;
+        write!(manifest, "{}", textwrap::indent(nix_src.as_str(), "  "))?;
     }
     writeln!(manifest, "}}")?;
 
@@ -86,6 +59,6 @@ async fn main() -> Result<()> {
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Output Nix manifest path.
-    #[arg(short, long, default_value = "./manifest.nix")]
+    #[arg(short, long, default_value = "./manifests.nix")]
     output_path: PathBuf,
 }

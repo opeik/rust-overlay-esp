@@ -32,29 +32,29 @@ in {
         (builtins.attrNames assets));
   in let
     llvm-version = builtins.head (builtins.match ''.+esp-(.+)-.+-.+\..+'' (builtins.baseNameOf bins.libs_llvm));
-    xtensa-version = builtins.head (builtins.match ''.+xtensa-esp32-elf-(.+)-.+-.+-.+\..+'' (builtins.baseNameOf bins.xtensa-esp32-elf));
+    esp-version = builtins.head (builtins.match ''.+xtensa-esp32-elf-(.+)-.+-.+-.+\..+'' (builtins.baseNameOf bins.xtensa-esp32-elf));
   in
     pkgs.stdenv.mkDerivation {
       pname = "rust-bin-esp";
-      version = "1.70.0.1";
+      version = esp-version;
       dontUnpack = true;
-      buildInputs = [pkgs.makeWrapper];
+      buildInputs = with pkgs; [makeWrapper patchelf];
       buildPhase = with bins;
       with srcs; ''
         mkdir --parents rust rust-src esp/{\
         xtensa-esp32-elf-clang/esp-${llvm-version},\
-        xtensa-esp32s2-elf/esp-${xtensa-version},\
-        xtensa-esp32-elf/esp-${xtensa-version},\
-        xtensa-esp32s3-elf/esp-${xtensa-version},\
-        riscv32-esp-elf/esp-${xtensa-version}}
+        xtensa-esp32s2-elf/esp-${esp-version},\
+        xtensa-esp32-elf/esp-${esp-version},\
+        xtensa-esp32s3-elf/esp-${esp-version},\
+        riscv32-esp-elf/esp-${esp-version}}
 
         tar --extract --file ${rust} --directory rust
         tar --extract --file ${rust-src} --directory rust-src
         tar --extract --file ${libs_llvm} --directory esp/xtensa-esp32-elf-clang/esp-${llvm-version}
-        tar --extract --file ${xtensa-esp32-elf} --directory esp/xtensa-esp32-elf/esp-${xtensa-version}
-        tar --extract --file ${xtensa-esp32s2-elf} --directory esp/xtensa-esp32s2-elf/esp-${xtensa-version}
-        tar --extract --file ${xtensa-esp32s3-elf} --directory esp/xtensa-esp32s3-elf/esp-${xtensa-version}
-        tar --extract --file ${riscv32-esp-elf} --directory esp/riscv32-esp-elf/esp-${xtensa-version}
+        tar --extract --file ${xtensa-esp32-elf} --directory esp/xtensa-esp32-elf/esp-${esp-version}
+        tar --extract --file ${xtensa-esp32s2-elf} --directory esp/xtensa-esp32s2-elf/esp-${esp-version}
+        tar --extract --file ${xtensa-esp32s3-elf} --directory esp/xtensa-esp32s3-elf/esp-${esp-version}
+        tar --extract --file ${riscv32-esp-elf} --directory esp/riscv32-esp-elf/esp-${esp-version}
 
         ./rust/rust-nightly-aarch64-apple-darwin/install.sh --destdir=esp \
           --prefix="" --without=rust-docs-json-preview,rust-docs --disable-ldconfig
@@ -66,10 +66,10 @@ in {
         mv esp $out
 
         ln --symbolic $out/esp/{\
-        xtensa-esp32-elf/esp-${xtensa-version}/xtensa-esp32-elf/bin/*,\
-        xtensa-esp32s2-elf/esp-${xtensa-version}/xtensa-esp32s2-elf/bin/*,\
-        xtensa-esp32s3-elf/esp-${xtensa-version}/xtensa-esp32s3-elf/bin/*,\
-        riscv32-esp-elf/esp-${xtensa-version}/riscv32-esp-elf/bin/*} $out/bin
+        xtensa-esp32-elf/esp-${esp-version}/xtensa-esp32-elf/bin/*,\
+        xtensa-esp32s2-elf/esp-${esp-version}/xtensa-esp32s2-elf/bin/*,\
+        xtensa-esp32s3-elf/esp-${esp-version}/xtensa-esp32s3-elf/bin/*,\
+        riscv32-esp-elf/esp-${esp-version}/riscv32-esp-elf/bin/*} $out/bin
 
         # See: https://github.com/ivmarkov/rust-esp32-std-demo/issues/129
         for file in $out/esp/bin/*; do
