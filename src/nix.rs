@@ -10,6 +10,22 @@ pub struct Target {
     pub os: OperatingSystem,
 }
 
+impl Ord for Target {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        let a = self.to_string();
+        let b = other.to_string();
+        a.cmp(&b)
+    }
+}
+
+impl PartialOrd for Target {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        let a = self.to_string();
+        let b = other.to_string();
+        a.partial_cmp(&b)
+    }
+}
+
 impl ToString for Target {
     fn to_string(&self) -> String {
         use targets::*;

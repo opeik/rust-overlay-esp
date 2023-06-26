@@ -45,15 +45,15 @@ static LLVM_RELEASE_REGEX: Lazy<Regex> =
     lazy_regex!(r"(?P<name>libs_llvm)-(?P<version>.+\d)-(?P<os>.+?)(-(?P<arch>.+?))?\.(?P<ext>.+)");
 
 #[nutype(validate(min_len = 64, max_len = 64))]
-#[derive(Debug, Clone, AsRef)]
+#[derive(*)]
 pub struct Sha256Digest(String);
 
 #[nutype(validate(min_len = 1))]
-#[derive(Debug, Clone, AsRef)]
+#[derive(*)]
 pub struct Name(String);
 
 #[nutype(validate(min_len = 1))]
-#[derive(Debug, Clone, AsRef)]
+#[derive(*)]
 pub struct Version(String);
 
 #[derive(Debug, Clone)]

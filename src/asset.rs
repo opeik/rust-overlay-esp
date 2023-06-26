@@ -16,7 +16,9 @@ pub fn fetch(
     metadata: impl IntoIterator<Item = Metadata>,
     buffer: usize,
 ) -> impl Stream<Item = Result<Asset>> {
-    stream::iter(metadata).map(fetch_asset).buffered(buffer)
+    stream::iter(metadata)
+        .map(fetch_asset)
+        .buffer_unordered(buffer)
 }
 
 async fn fetch_asset(metadata: Metadata) -> Result<Asset> {

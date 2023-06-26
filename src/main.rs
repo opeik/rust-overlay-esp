@@ -39,15 +39,20 @@ async fn main() -> Result<()> {
         .chain(rust_src_releases)
         .chain(llvm_releases)
         .chain(esp_releases);
-    let assets = asset::fetch(releases, 8).collect::<Vec<_>>().await;
+    let mut assets = asset::fetch(releases, 8)
+        .collect::<Vec<_>>()
+        .await
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
+    assets.sort_unstable_by_key(|asset| (asset.metadata.name.clone(), asset.metadata.target));
 
     let output_path = args.output_path;
     let mut manifest = BufWriter::new(File::create(output_path.as_path())?);
 
     writeln!(manifest, "rec {{")?;
     for asset in assets {
-        let nix_src = asset?.to_nix_src()?;
-        write!(manifest, "{}", textwrap::indent(nix_src.as_str(), "  "))?;
+        write!(manifest, "{}", textwrap::indent(&asset.to_nix_src()?, "  "))?;
     }
     writeln!(manifest, "}}")?;
 
