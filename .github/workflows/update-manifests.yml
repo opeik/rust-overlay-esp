@@ -1,12 +1,16 @@
+name: update-manifests
 on:
   schedule:
     - cron: "0 0 * * 1"
   workflow_dispatch:
+permissions:
+  contents: read
 
-name: update-manifests
 jobs:
   update-manifests:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -24,4 +28,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: Update package manifests
-          file_pattern: "manifests.nix"
+          file_pattern: manifests.nix
