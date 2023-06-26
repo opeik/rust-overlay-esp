@@ -40,7 +40,7 @@ async fn main() -> Result<()> {
         .chain(llvm_releases)
         .chain(esp_releases);
     let mut assets = asset::fetch(releases, 8)
-        .collect::<Vec<_>>()
+        .collect::<Vec<_>>() // TODO: can I avoid this collection?
         .await
         .into_iter()
         .flatten()

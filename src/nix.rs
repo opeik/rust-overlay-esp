@@ -12,17 +12,13 @@ pub struct Target {
 
 impl Ord for Target {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        let a = self.to_string();
-        let b = other.to_string();
-        a.cmp(&b)
+        self.to_string().cmp(&other.to_string())
     }
 }
 
 impl PartialOrd for Target {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        let a = self.to_string();
-        let b = other.to_string();
-        a.partial_cmp(&b)
+        self.to_string().partial_cmp(&other.to_string())
     }
 }
 
