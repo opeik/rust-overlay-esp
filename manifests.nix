@@ -39,31 +39,31 @@ rec {
     sha256 = "21694e5ee506f5e52908b12c6b5be7044d87cf34bb4dfcd151d0a10ea09dedc1";
   };
   latest.bin.x86_64-linux.riscv32-esp-elf = bin.x86_64-linux.riscv32-esp-elf-12_2_0_20230208;
-  bin.aarch64-darwin.rust-1_71_0_1 = {
-    url = "https://github.com/esp-rs/rust-build/releases/download/v1.71.0.1/rust-1.71.0.1-aarch64-apple-darwin.tar.xz";
-    sha256 = "e2d3aec2c76bb18df90a36f31519160acb59ca04dc7ff6be22795782dade1b69";
+  bin.aarch64-darwin.rust-1_72_0_0 = {
+    url = "https://github.com/esp-rs/rust-build/releases/download/v1.72.0.0/rust-1.72.0.0-aarch64-apple-darwin.tar.xz";
+    sha256 = "7dc93575fe95eb643440f857007b52ef9efce9771c538211b42f1a26309935c3";
   };
-  latest.bin.aarch64-darwin.rust = bin.aarch64-darwin.rust-1_71_0_1;
-  bin.aarch64-linux.rust-1_71_0_1 = {
-    url = "https://github.com/esp-rs/rust-build/releases/download/v1.71.0.1/rust-1.71.0.1-aarch64-unknown-linux-gnu.tar.xz";
-    sha256 = "3e756c213451a5a94326b5d9342a149334725f3ab195f459dab62e2c2b775f76";
+  latest.bin.aarch64-darwin.rust = bin.aarch64-darwin.rust-1_72_0_0;
+  bin.aarch64-linux.rust-1_72_0_0 = {
+    url = "https://github.com/esp-rs/rust-build/releases/download/v1.72.0.0/rust-1.72.0.0-aarch64-unknown-linux-gnu.tar.xz";
+    sha256 = "5aff777b19217d57c48d77af2f733b5d9f85248b7c52c5f259405801dc3c9eee";
   };
-  latest.bin.aarch64-linux.rust = bin.aarch64-linux.rust-1_71_0_1;
-  bin.x86_64-darwin.rust-1_71_0_1 = {
-    url = "https://github.com/esp-rs/rust-build/releases/download/v1.71.0.1/rust-1.71.0.1-x86_64-apple-darwin.tar.xz";
-    sha256 = "6ece3fcc45b1e4fd6e484d0b7a45f99fc0e7abe0a0807e402d912a06c02e4846";
+  latest.bin.aarch64-linux.rust = bin.aarch64-linux.rust-1_72_0_0;
+  bin.x86_64-darwin.rust-1_72_0_0 = {
+    url = "https://github.com/esp-rs/rust-build/releases/download/v1.72.0.0/rust-1.72.0.0-x86_64-apple-darwin.tar.xz";
+    sha256 = "e320aafd73dab971aebb6b0852f5a0319b1b5d95df61276a2320d6ed058e06a3";
   };
-  latest.bin.x86_64-darwin.rust = bin.x86_64-darwin.rust-1_71_0_1;
-  bin.x86_64-linux.rust-1_71_0_1 = {
-    url = "https://github.com/esp-rs/rust-build/releases/download/v1.71.0.1/rust-1.71.0.1-x86_64-unknown-linux-gnu.tar.xz";
-    sha256 = "54a736c94241abd8487a5312b9427bb873b55f484d853e77a7c512205fe53f23";
+  latest.bin.x86_64-darwin.rust = bin.x86_64-darwin.rust-1_72_0_0;
+  bin.x86_64-linux.rust-1_72_0_0 = {
+    url = "https://github.com/esp-rs/rust-build/releases/download/v1.72.0.0/rust-1.72.0.0-x86_64-unknown-linux-gnu.tar.xz";
+    sha256 = "6935f378b42f6dbe45e955eabd70664ee21ea9478b2f61b93f92fd8135f10127";
   };
-  latest.bin.x86_64-linux.rust = bin.x86_64-linux.rust-1_71_0_1;
-  src.rust-src-1_71_0_1 = {
-    url = "https://github.com/esp-rs/rust-build/releases/download/v1.71.0.1/rust-src-1.71.0.1.tar.xz";
-    sha256 = "69b4a878bf14074cf21ede0deb1eb0b3c82e04dca1cb97c8545c83c716ecdeb8";
+  latest.bin.x86_64-linux.rust = bin.x86_64-linux.rust-1_72_0_0;
+  src.rust-src-1_72_0_0 = {
+    url = "https://github.com/esp-rs/rust-build/releases/download/v1.72.0.0/rust-src-1.72.0.0.tar.xz";
+    sha256 = "becd95f9fe259da08c99fb4bf895c9f47098c9cd461592f546665e7019536808";
   };
-  latest.src.rust-src = src.rust-src-1_71_0_1;
+  latest.src.rust-src = src.rust-src-1_72_0_0;
   bin.aarch64-darwin.xtensa-esp32-elf-12_2_0_20230208 = {
     url = "https://github.com/espressif/crosstool-NG/releases/download/esp-12.2.0_20230208/xtensa-esp32-elf-12.2.0_20230208-aarch64-apple-darwin.tar.xz";
     sha256 = "f50acab2b216e9475dc5313b3e4b424cbc70d0abd23ba1818aff4a019165da8e";
