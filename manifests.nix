@@ -20,70 +20,70 @@ rec {
   };
   latest.bin.x86_64-linux.libs_llvm = bin.x86_64-linux.libs_llvm-esp-16_0_4-20231113;
   bin.aarch64-darwin.riscv32-esp-elf-13_2_0_20230928 = {
-    url = "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-aarch64-apple-darwin.tar.xz";
-    sha256 = "c2f989370c101ae3f890aa71e6f57064f068f7c4a1d9f26445894c83f919624f";
-  };
-  latest.bin.aarch64-darwin.riscv32-esp-elf = bin.aarch64-darwin.riscv32-esp-elf-13_2_0_20230928;
-  bin.aarch64-darwin.riscv32-esp-elf-13_2_0_20230928 = {
     url = "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-aarch64-apple-darwin.tar.gz";
     sha256 = "3aa0c8f20475027d451a98eed45f3b19e1181b584fddbb12847bb9452b9b5a26";
   };
   latest.bin.aarch64-darwin.riscv32-esp-elf = bin.aarch64-darwin.riscv32-esp-elf-13_2_0_20230928;
-  bin.aarch64-linux.riscv32-esp-elf-13_2_0_20230928 = {
-    url = "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-aarch64-linux-gnu.tar.gz";
-    sha256 = "b0ce269901981ed97feba130ff583a9377e5e70cef06c616ca2a6686287d8de0";
+  bin.aarch64-darwin.riscv32-esp-elf-13_2_0_20230928 = {
+    url = "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-aarch64-apple-darwin.tar.xz";
+    sha256 = "c2f989370c101ae3f890aa71e6f57064f068f7c4a1d9f26445894c83f919624f";
   };
-  latest.bin.aarch64-linux.riscv32-esp-elf = bin.aarch64-linux.riscv32-esp-elf-13_2_0_20230928;
+  latest.bin.aarch64-darwin.riscv32-esp-elf = bin.aarch64-darwin.riscv32-esp-elf-13_2_0_20230928;
   bin.aarch64-linux.riscv32-esp-elf-13_2_0_20230928 = {
     url = "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-aarch64-linux-gnu.tar.xz";
     sha256 = "6ee4b30dff18bdea9ada79399c0c81ba82b6ed99a565746a7d5040c7e62566b3";
   };
   latest.bin.aarch64-linux.riscv32-esp-elf = bin.aarch64-linux.riscv32-esp-elf-13_2_0_20230928;
-  bin.x86_64-darwin.riscv32-esp-elf-13_2_0_20230928 = {
-    url = "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-apple-darwin.tar.gz";
-    sha256 = "fac2c797fa8265bfec1f0337676ecc00fec124c036b15f1ec8003e26d7287688";
+  bin.aarch64-linux.riscv32-esp-elf-13_2_0_20230928 = {
+    url = "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-aarch64-linux-gnu.tar.gz";
+    sha256 = "b0ce269901981ed97feba130ff583a9377e5e70cef06c616ca2a6686287d8de0";
   };
-  latest.bin.x86_64-darwin.riscv32-esp-elf = bin.x86_64-darwin.riscv32-esp-elf-13_2_0_20230928;
+  latest.bin.aarch64-linux.riscv32-esp-elf = bin.aarch64-linux.riscv32-esp-elf-13_2_0_20230928;
   bin.x86_64-darwin.riscv32-esp-elf-13_2_0_20230928 = {
     url = "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-apple-darwin.tar.xz";
     sha256 = "ce40c75a1ae0e4b986daeeff321aaa7b57f74eb4bcfd011f1252fd6932bbb90f";
   };
   latest.bin.x86_64-darwin.riscv32-esp-elf = bin.x86_64-darwin.riscv32-esp-elf-13_2_0_20230928;
-  bin.x86_64-linux.riscv32-esp-elf-13_2_0_20230928 = {
-    url = "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-linux-gnu.tar.gz";
-    sha256 = "7d8c46828385212af66e18f9a1391be4d2f8d320075e7c9d9e11a3420d680dc0";
+  bin.x86_64-darwin.riscv32-esp-elf-13_2_0_20230928 = {
+    url = "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-apple-darwin.tar.gz";
+    sha256 = "fac2c797fa8265bfec1f0337676ecc00fec124c036b15f1ec8003e26d7287688";
   };
-  latest.bin.x86_64-linux.riscv32-esp-elf = bin.x86_64-linux.riscv32-esp-elf-13_2_0_20230928;
+  latest.bin.x86_64-darwin.riscv32-esp-elf = bin.x86_64-darwin.riscv32-esp-elf-13_2_0_20230928;
   bin.x86_64-linux.riscv32-esp-elf-13_2_0_20230928 = {
     url = "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-linux-gnu.tar.xz";
     sha256 = "782feefe354500c5f968e8c91959651be3bdbbd7ae8a17affcee2b1bffcaad89";
   };
   latest.bin.x86_64-linux.riscv32-esp-elf = bin.x86_64-linux.riscv32-esp-elf-13_2_0_20230928;
-  bin.aarch64-darwin.rust-1_74_0_0 = {
-    url = "https://github.com/esp-rs/rust-build/releases/download/v1.74.0.0/rust-1.74.0.0-aarch64-apple-darwin.tar.xz";
-    sha256 = "969930f97a7cde567f920a0f1a72849a0c0f62db6c3b739e7a1f01e7aee0310e";
+  bin.x86_64-linux.riscv32-esp-elf-13_2_0_20230928 = {
+    url = "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/riscv32-esp-elf-13.2.0_20230928-x86_64-linux-gnu.tar.gz";
+    sha256 = "7d8c46828385212af66e18f9a1391be4d2f8d320075e7c9d9e11a3420d680dc0";
   };
-  latest.bin.aarch64-darwin.rust = bin.aarch64-darwin.rust-1_74_0_0;
-  bin.aarch64-linux.rust-1_74_0_0 = {
-    url = "https://github.com/esp-rs/rust-build/releases/download/v1.74.0.0/rust-1.74.0.0-aarch64-unknown-linux-gnu.tar.xz";
-    sha256 = "25f9ba5957a7daa1b7e85438b52840aa19b4ed365071a5528c2118abd06cb52e";
+  latest.bin.x86_64-linux.riscv32-esp-elf = bin.x86_64-linux.riscv32-esp-elf-13_2_0_20230928;
+  bin.aarch64-darwin.rust-1_74_0_1 = {
+    url = "https://github.com/esp-rs/rust-build/releases/download/v1.74.0.1/rust-1.74.0.1-aarch64-apple-darwin.tar.xz";
+    sha256 = "ba76ece8dde6fabeeba61f5b630b1a889868a6f9832699aaa3f0448c75cdd0fd";
   };
-  latest.bin.aarch64-linux.rust = bin.aarch64-linux.rust-1_74_0_0;
-  bin.x86_64-darwin.rust-1_74_0_0 = {
-    url = "https://github.com/esp-rs/rust-build/releases/download/v1.74.0.0/rust-1.74.0.0-x86_64-apple-darwin.tar.xz";
-    sha256 = "0be1f592d8b93380ef0716c438cae9a5c34e501ae00c067e9e7d7cf6b4651055";
+  latest.bin.aarch64-darwin.rust = bin.aarch64-darwin.rust-1_74_0_1;
+  bin.aarch64-linux.rust-1_74_0_1 = {
+    url = "https://github.com/esp-rs/rust-build/releases/download/v1.74.0.1/rust-1.74.0.1-aarch64-unknown-linux-gnu.tar.xz";
+    sha256 = "b6858370da5e24c2575ffffc29bb16b5139a4dc95e41bae08df784259705e880";
   };
-  latest.bin.x86_64-darwin.rust = bin.x86_64-darwin.rust-1_74_0_0;
-  bin.x86_64-linux.rust-1_74_0_0 = {
-    url = "https://github.com/esp-rs/rust-build/releases/download/v1.74.0.0/rust-1.74.0.0-x86_64-unknown-linux-gnu.tar.xz";
-    sha256 = "173a2d7b2324fe49776ee7fe41a27cf344ed8cb5c65fddd7ecf83a6b58a38fde";
+  latest.bin.aarch64-linux.rust = bin.aarch64-linux.rust-1_74_0_1;
+  bin.x86_64-darwin.rust-1_74_0_1 = {
+    url = "https://github.com/esp-rs/rust-build/releases/download/v1.74.0.1/rust-1.74.0.1-x86_64-apple-darwin.tar.xz";
+    sha256 = "02d65210cde4a90d95313f0023e014caa31d167c1b1b8510530074cce43dc8d1";
   };
-  latest.bin.x86_64-linux.rust = bin.x86_64-linux.rust-1_74_0_0;
-  src.rust-src-1_74_0_0 = {
-    url = "https://github.com/esp-rs/rust-build/releases/download/v1.74.0.0/rust-src-1.74.0.0.tar.xz";
-    sha256 = "557ac8c71246993ec996f346f95a3e92bef343d6494d09f33ecfb0d7dcb56f15";
+  latest.bin.x86_64-darwin.rust = bin.x86_64-darwin.rust-1_74_0_1;
+  bin.x86_64-linux.rust-1_74_0_1 = {
+    url = "https://github.com/esp-rs/rust-build/releases/download/v1.74.0.1/rust-1.74.0.1-x86_64-unknown-linux-gnu.tar.xz";
+    sha256 = "fb8042bf3c266cbc2a98df4c56bcf0370f8df159fed8df0a05566e9642a9ea1a";
   };
-  latest.src.rust-src = src.rust-src-1_74_0_0;
+  latest.bin.x86_64-linux.rust = bin.x86_64-linux.rust-1_74_0_1;
+  src.rust-src-1_74_0_1 = {
+    url = "https://github.com/esp-rs/rust-build/releases/download/v1.74.0.1/rust-src-1.74.0.1.tar.xz";
+    sha256 = "a04a6f84885d2cb2c1942b35b6a5903f402b877467376bd18dfe9853e0744aeb";
+  };
+  latest.src.rust-src = src.rust-src-1_74_0_1;
   bin.aarch64-darwin.xtensa-esp-elf-13_2_0_20230928 = {
     url = "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20230928/xtensa-esp-elf-13.2.0_20230928-aarch64-apple-darwin.tar.xz";
     sha256 = "687243e5cbefb7cf05603effbdd6fde5769f94daff7e519f5bbe61f43c4c0ef6";
