@@ -50,7 +50,7 @@ in {
 
         tar --extract --file ${rust} --directory rust
         tar --extract --file ${rust-src} --directory rust-src
-        tar --extract --file ${libs_llvm} --directory esp/xtensa-esp32-elf-clang/esp-${llvm-version}
+        tar --extract --file ${libs-clang-esp} --directory esp/xtensa-esp32-elf-clang/esp-${llvm-version}
         tar --extract --file ${xtensa-esp32-elf} --directory esp/xtensa-esp32-elf/esp-${esp-version}
         tar --extract --file ${xtensa-esp32s2-elf} --directory esp/xtensa-esp32s2-elf/esp-${esp-version}
         tar --extract --file ${xtensa-esp32s3-elf} --directory esp/xtensa-esp32s3-elf/esp-${esp-version}
