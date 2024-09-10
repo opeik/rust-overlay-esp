@@ -7,6 +7,7 @@ use color_eyre::{
 use lazy_regex::{lazy_regex, Lazy, Regex};
 use nutype::nutype;
 use target_lexicon::{Architecture, OperatingSystem};
+use tracing::{info, warn};
 use url::Url;
 
 use crate::{github::Github, nix::Target};
@@ -28,21 +29,22 @@ macro_rules! capture_string {
 
 /// Matches components of a Rust release filename.
 static RUST_RELEASE_REGEX: Lazy<Regex> = lazy_regex!(
-    r"(?P<name>rust)-(?P<version>.+?)-(?P<arch>.+?)-(?P<vendor>.+?)-(?P<os>.+?)(-(?P<env>.+?))?\.(?P<ext>.+)"
+    r"(?P<name>rust)-(?P<version>.+?)-(?P<arch>.+?)-(?P<vendor>.+?)-(?P<os>.+?)(-(?P<env>.+?))?\.(?P<ext>tar\.xz)"
 );
 
 /// Matches components of a Rust source release filename.
 static RUST_SRC_RELEASE_REGEX: Lazy<Regex> =
-    lazy_regex!(r"(?P<name>rust-src)-(?P<version>.*\d)\.(?P<ext>.+)");
+    lazy_regex!(r"(?P<name>rust-src)-(?P<version>.*\d)\.(?P<ext>tar\.xz)");
 
 /// Matches components of an ESP release filename.
 static ESP_RELEASE_REGEX: Lazy<Regex> = lazy_regex!(
-    r"(?P<name>.+)-(?P<version>.+?)-(?P<arch>.+?)-(?P<os>.+?)-(?P<env>.+?)\.(?P<ext>.+)"
+    r"(?P<name>.+)-(?P<version>.+?)-(?P<arch>.+?)-(?P<os>.+?)-(?P<env>.+?)\.(?P<ext>tar\.xz)"
 );
 
 /// Matches components of an LLVM release filename.
-static LLVM_RELEASE_REGEX: Lazy<Regex> =
-    lazy_regex!(r"(?P<name>libs_llvm)-(?P<version>.+\d)-(?P<os>.+?)(-(?P<arch>.+?))?\.(?P<ext>.+)");
+static LLVM_RELEASE_REGEX: Lazy<Regex> = lazy_regex!(
+    r"(?P<name>libs-clang-esp)-(?P<version>.+?)-(?P<arch>.+?)(-(?P<os>.+?))?\.(?P<ext>tar\.xz)"
+);
 
 #[nutype(validate(min_len = 64, max_len = 64))]
 #[derive(*)]
@@ -71,7 +73,8 @@ pub struct Metadata {
 }
 
 pub trait Fetch {
-    async fn fetch<P: Parse>(url: &Url) -> Result<impl Iterator<Item = Result<Metadata>>>;
+    #[allow(async_fn_in_trait)]
+    async fn fetch<P: Parse>(url: Url) -> Result<impl Iterator<Item = Result<Metadata>>>;
 }
 
 pub trait Parse {
@@ -84,8 +87,13 @@ pub async fn fetch<P: Parse>(
 ) -> Result<impl Iterator<Item = Metadata>> {
     let base = Url::parse("https://github.com")?;
     let targets = targets.into_iter().collect::<Vec<_>>();
-    let metadata = Github::fetch::<P>(&base.join(repo)?)
+    info!("fetching release metadata for `{repo}`...");
+    let metadata = Github::fetch::<P>(base.join(repo)?)
         .await?
+        .inspect(|x| match x {
+            Err(e) => warn!("failed to fetch github release metadata: {e}"),
+            Ok(_) => {}
+        })
         .flatten()
         .filter(move |x| targets.contains(&x.target));
     Ok(metadata)
@@ -108,7 +116,8 @@ impl Parse for RustRelease {
         let name = value.name.into_inner();
         let captures = regex
             .captures(&name)
-            .context("failed to parse rust release metadata")?;
+            .context("failed to parse asset name")?;
+
         Ok(Metadata {
             target: Some(Target {
                 arch: Architecture::from_str(capture_str!(captures, "arch"))
@@ -130,7 +139,8 @@ impl Parse for RustSrcRelease {
         let name = value.name.into_inner();
         let captures = regex
             .captures(&name)
-            .context("failed to parse rust-src release metadata")?;
+            .context("failed to parse asset name")?;
+
         Ok(Metadata {
             target: None,
             name: Name::new(capture_string!(captures, "name"))?,
@@ -147,7 +157,7 @@ impl Parse for LlvmRelease {
         let name = value.name.into_inner();
         let captures = regex
             .captures(&name)
-            .context("failed to parse llvm release metadata")?;
+            .context("failed to parse asset name")?;
 
         let arch_str = match captures
             .name("arch")
@@ -159,7 +169,8 @@ impl Parse for LlvmRelease {
         };
 
         let os_str = match captures.name("os").wrap_err("invalid os")?.as_str() {
-            "macos" => "darwin",
+            "apple-darwin" => "darwin",
+            "linux-gnu" => "linux",
             os_str => os_str,
         };
 
@@ -182,7 +193,7 @@ impl Parse for EspRelease {
         let name = value.name.into_inner();
         let captures = regex
             .captures(&name)
-            .context("failed to parse esp release metadata")?;
+            .context("failed to parse asset name")?;
 
         let os_str = match captures.name("os").wrap_err("invalid os")?.as_str() {
             "apple" => "darwin",
@@ -294,44 +305,57 @@ mod test {
         let regex = &LLVM_RELEASE_REGEX;
 
         assert_eq!(
-            regex_captures(regex, "libs_llvm-esp-16.0.0-20230516-linux-arm64.tar.xz")?,
+            regex_captures(
+                regex,
+                " libs-clang-esp-18.1.2_20240829-aarch64-linux-gnu.tar.xz"
+            )?,
             btreemap! {
-                "name" => "libs_llvm",
-                "version" => "esp-16.0.0-20230516",
-                "os" => "linux",
-                "arch" => "arm64",
+                "name" => "libs-clang-esp",
+                "version" => "18.1.2_20240829",
+                "os" => "linux-gnu",
+                "arch" => "aarch64",
                 "ext" => "tar.xz",
             }
         );
 
         assert_eq!(
-            regex_captures(regex, "libs_llvm-esp-16.0.0-20230516-linux-amd64.tar.xz")?,
+            regex_captures(
+                regex,
+                "libs-clang-esp-18.1.2_20240829-x86_64-linux-gnu.tar.xz"
+            )?,
             btreemap! {
-                "name" => "libs_llvm",
-                "version" => "esp-16.0.0-20230516",
-                "os" => "linux",
-                "arch" => "amd64",
+                "name" => "libs-clang-esp",
+                "version" => "18.1.2_20240829",
+                "os" => "linux-gnu",
+                "arch" => "x86_64",
                 "ext" => "tar.xz",
             }
         );
 
         assert_eq!(
-            regex_captures(regex, "libs_llvm-esp-16.0.0-20230516-macos-arm64.tar.xz")?,
+            regex_captures(
+                regex,
+                "libs-clang-esp-18.1.2_20240829-aarch64-apple-darwin.tar.xz"
+            )?,
             btreemap! {
-                "name" => "libs_llvm",
-                "version" => "esp-16.0.0-20230516",
-                "os" => "macos",
-                "arch" => "arm64",
+                "name" => "libs-clang-esp",
+                "version" => "18.1.2_20240829",
+                "os" => "apple-darwin",
+                "arch" => "aarch64",
                 "ext" => "tar.xz",
             }
         );
 
         assert_eq!(
-            regex_captures(regex, "libs_llvm-esp-16.0.0-20230516-macos.tar.xz")?,
+            regex_captures(
+                regex,
+                "libs-clang-esp-18.1.2_20240829-x86_64-apple-darwin.tar.xz"
+            )?,
             btreemap! {
-                "name" => "libs_llvm",
-                "version" => "esp-16.0.0-20230516",
-                "os" => "macos",
+                "name" => "libs-clang-esp",
+                "version" => "18.1.2_20240829",
+                "os" => "apple-darwin",
+                "arch" => "x86_64",
                 "ext" => "tar.xz",
             }
         );

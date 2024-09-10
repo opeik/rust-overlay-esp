@@ -31,8 +31,8 @@ in {
         })
         (builtins.attrNames assets));
   in let
-    llvm-version = builtins.head (builtins.match ''.+esp-(.+)-.+-.+\..+'' (builtins.baseNameOf bins.libs_llvm));
-    esp-version = builtins.head (builtins.match ''.+xtensa-esp32-elf-(.+)-.+-.+-.+\..+'' (builtins.baseNameOf bins.xtensa-esp32-elf));
+    llvm-version = builtins.head (builtins.match ''.+esp-(.+)-.+-.+\..+'' (builtins.baseNameOf bins.libs-clang-esp));
+    esp-version = builtins.head (builtins.match ''.+xtensa-esp-elf-(.+)-.+-.+-.+\..+'' (builtins.baseNameOf bins.xtensa-esp-elf));
   in
     pkgs.stdenv.mkDerivation {
       pname = "rust-bin-esp";

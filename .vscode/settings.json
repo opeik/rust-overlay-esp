@@ -12,7 +12,10 @@
     }
   },
   "cSpell.words": [
-    "aarch"
+    "aarch",
+    "espressif",
+    "nutype",
+    "riscv"
   ],
   "rust-analyzer.server.path": "rust-analyzer"
 }

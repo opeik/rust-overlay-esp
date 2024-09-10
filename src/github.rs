@@ -145,7 +145,7 @@ pub fn new_client() -> Result<Client> {
         .build()?)
 }
 
-pub async fn fetch_latest_release(client: &Client, url: &Url) -> Result<Release> {
+pub async fn fetch_latest_release(client: &Client, url: Url) -> Result<Release> {
     let mut parts = url
         .path_segments()
         .context("failed to split github url")?
@@ -167,13 +167,13 @@ pub async fn fetch_latest_release(client: &Client, url: &Url) -> Result<Release>
 pub struct Github;
 
 impl Fetch for Github {
-    async fn fetch<P: Parse>(url: &Url) -> Result<impl Iterator<Item = Result<Metadata>>> {
+    async fn fetch<P: Parse>(url: Url) -> Result<impl Iterator<Item = Result<Metadata>>> {
         let client = new_client()?;
         let release = fetch_latest_release(&client, url).await?;
         Ok(release.assets.into_iter().map(move |x| {
             P::parse(RawMetadata {
                 url: x.browser_download_url.as_str().try_into()?,
-                name: Name::new(x.name)?,
+                name: Name::new(&x.name)?,
             })
         }))
     }

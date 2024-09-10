@@ -18,21 +18,22 @@ impl Ord for Target {
 
 impl PartialOrd for Target {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.to_string().partial_cmp(&other.to_string())
+        Some(self.cmp(other))
     }
 }
 
-impl ToString for Target {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for Target {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use targets::*;
-        match *self {
+        let s = match *self {
             AARCH64_DARWIN => "aarch64-darwin",
             X86_64_DARWIN => "x86_64-darwin",
             AARCH64_LINUX => "aarch64-linux",
             X86_64_LINUX => "x86_64-linux",
             _ => panic!("invalid target"),
         }
-        .to_string()
+        .to_string();
+        write!(f, "{s}")
     }
 }
 
