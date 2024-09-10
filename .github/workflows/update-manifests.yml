@@ -24,6 +24,9 @@ jobs:
       - name: Generate manifests
         run: nix develop --command cargo run
 
+      - name: Sanity check manifests
+        run: nix eval --show-trace --json .#rust-bin-esp | json_pp
+
       - name: Commit manifests
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
