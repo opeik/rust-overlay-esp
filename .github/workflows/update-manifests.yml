@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: samueldr/lix-gha-installer-action@latest
 
       - name: Fetch Rust cache
         uses: Swatinem/rust-cache@v2
